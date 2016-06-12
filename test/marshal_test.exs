@@ -53,4 +53,8 @@ defmodule MarshalTest do
   test "Mixed array" do
     assert Marshal.decode("\x04\b[\f0TFi\x06i\ai\bi\x04\xFF\xFF\xFF?") == {"4.8", [nil, true, false, 1, 2, 3, 1073741823]}
   end
+
+  test "Nested array" do
+    assert Marshal.decode("\x04\b[\b0[\aTF[\bi\x06i\ai\b") == {"4.8", [nil, [true, false], [1, 2, 3,]]}
+  end
 end
