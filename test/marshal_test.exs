@@ -41,4 +41,16 @@ defmodule MarshalTest do
   test "Decode min fixnum" do
     assert Marshal.decode("\x04\bi\xFC\x00\x00\x00\xC0") == {"4.8", -1073741824}
   end
+
+  test "Decode empty array" do
+    assert Marshal.decode("\x04\b[\x00") == {"4.8", []}
+  end
+
+  test "Array of ints" do
+    assert Marshal.decode("\x04\b[\bi\x06i\ai\b") == {"4.8", [1, 2, 3]}
+  end
+
+  test "Mixed array" do
+    assert Marshal.decode("\x04\b[\f0TFi\x06i\ai\bi\x04\xFF\xFF\xFF?") == {"4.8", [nil, true, false, 1, 2, 3, 1073741823]}
+  end
 end
