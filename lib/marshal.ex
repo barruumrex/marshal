@@ -5,11 +5,11 @@ defmodule Marshal do
   defp decode_element(<<"0">>), do: nil
   defp decode_element(<<"T">>), do: true
   defp decode_element(<<"F">>), do: false
-  defp decode_element(<<"i", rest::binary>>), do: decode_fixnum(rest)
+  defp decode_element(<<"i", value::binary>>), do: decode_fixnum(value)
   defp decode_element(rest), do: rest
 
   defp decode_fixnum(<<0>>), do: 0
-  defp decode_fixnum(<<num::signed-little-integer, rest::binary>>) when abs(num) < 5, do: decode_multibyte_fixnum(abs(num), rest)
+  defp decode_fixnum(<<size::signed-little-integer, num::binary>>) when abs(size) < 5, do: decode_multibyte_fixnum(abs(size), num)
   defp decode_fixnum(<<num::signed-little-integer>>) when num > 0, do: num - 5
   defp decode_fixnum(<<num::signed-little-integer>>) when num < 0, do: num + 5
 
