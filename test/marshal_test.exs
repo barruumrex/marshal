@@ -65,4 +65,8 @@ defmodule MarshalTest do
   test "Decode symbol array" do
     assert Marshal.decode("\x04\b[\a:\napple:\vbanana") == {"4.8", [:apple, :banana]}
   end
+
+  test "Decode repeated symbol array" do
+    assert Marshal.decode("\x04\b[\b:\napple:\vbanana;\x00") == {"4.8", [:apple, :banana, :apple]}
+  end
 end
