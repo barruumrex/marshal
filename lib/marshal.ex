@@ -9,6 +9,7 @@ defmodule Marshal do
   defp decode_element(<<"F", rest::binary>>), do: {false, rest}
   defp decode_element(<<"i", rest::binary>>), do: decode_fixnum(rest)
   defp decode_element(<<"[", rest::binary>>), do: decode_array(rest)
+  defp decode_element(<<":", rest::binary>>), do: decode_symbol(rest)
   defp decode_element(rest), do: rest
 
   defp decode_fixnum(<<0, rest::binary>>), do: {0, rest}
@@ -35,5 +36,17 @@ defmodule Marshal do
     {element, rest} = decode_element(rest)
 
     do_decode_array(rest, size - 1, [element | acc])
+  end
+
+  defp decode_symbol(bitstring) do
+    {size, rest} = decode_fixnum(bitstring) |> IO.inspect
+    {symbol, rest} = get_utf8_string(rest, size, [])
+
+    {String.to_atom(symbol), rest}
+  end
+
+  defp get_utf8_string(rest, 0, acc), do: {acc |> Enum.reverse() |> to_string(), rest}
+  defp get_utf8_string(<<head::utf8, rest::binary>>, size, acc) do
+    get_utf8_string(rest, size - 1, [head | acc])
   end
 end

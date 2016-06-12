@@ -57,4 +57,12 @@ defmodule MarshalTest do
   test "Nested array" do
     assert Marshal.decode("\x04\b[\b0[\aTF[\bi\x06i\ai\b") == {"4.8", [nil, [true, false], [1, 2, 3,]]}
   end
+
+  test "Decode symbol" do
+    assert Marshal.decode("\x04\b:\napple") == {"4.8", :apple}
+  end
+
+  test "Decode symbol array" do
+    assert Marshal.decode("\x04\b[\a:\napple:\vbanana") == {"4.8", [:apple, :banana]}
+  end
 end
