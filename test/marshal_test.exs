@@ -99,4 +99,9 @@ defmodule MarshalTest do
     a = {"a", [E: true]}
     assert Marshal.decode("\x04\b[\b[\x06I\"\x06a\x06:\x06ET[\x06@\a[\a@\a@\a") == {"4.8", [[a], [a], [a, a]]}
   end
+
+  test "Hashes cache like arrays" do
+    a = %{1 => 2}
+    assert Marshal.decode("\x04\b[\b[\x06{\x06i\x06i\a[\x06@\a[\a@\a@\a") == {"4.8", [[a], [a], [a, a]]}
+  end
 end
