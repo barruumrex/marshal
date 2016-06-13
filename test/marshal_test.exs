@@ -90,4 +90,9 @@ defmodule MarshalTest do
     hello = {"hello", [E: true]}
     assert Marshal.decode("\x04\b[\aI\"\nhello\x06:\x06ET@\x06") == {"4.8", [hello, hello]}
   end
+
+  test "Arrays cache before internals" do
+    a = {"a", [E: true]}
+    assert Marshal.decode("\x04\b[\b[\x06I\"\x06a\x06:\x06ET[\x06@\a[\a@\a@\a") == {"4.8", [[a], [a], [a, a]]}
+  end
 end

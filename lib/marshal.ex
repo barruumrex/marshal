@@ -7,7 +7,7 @@ defmodule Marshal do
   Decode a complete Marshal object. The first two bytes are always the Marshal version.
   """
   def decode(<<major::size(8), minor::size(8), rest::binary>>) do
-    {"#{major}.#{minor}", decode_element(rest, {%{}, %{base_object: 0}}) |> elem(0)}
+    {"#{major}.#{minor}", decode_element(rest, {%{}, %{}}) |> elem(0)}
   end
 
   # nil is stored as 0
@@ -53,7 +53,16 @@ defmodule Marshal do
     # Get the size of the array
     {size, rest} = decode_fixnum(bitstring)
 
-    do_decode_array(rest, size, [], cache)
+    # Add placeholder to cache
+    cache = add_to_object_cache(bitstring, cache)
+
+    # Decode array
+    {array, rest, cache} = do_decode_array(rest, size, [], cache)
+
+    # Replace placeholder with real object
+    cache = replace_object_cache(bitstring, array, cache)
+
+    {array, rest, cache}
   end
 
   # Recursively extract elements from the array until you've reached the end.
@@ -92,6 +101,17 @@ defmodule Marshal do
   # Objects that are reused get stored as references. Maintain a cache for future reference
   defp add_to_object_cache(object, {symbol_cache, object_cache}) do
     {symbol_cache, add_to_cache(object, object_cache)}
+  end
+
+  defp replace_object_cache(old, new, {symbol_cache, object_cache}) do
+    ref = object_cache[old]
+
+    object_cache =
+      object_cache
+      |> Map.delete(old)
+      |> Map.put(new, ref)
+
+    {symbol_cache, object_cache}
   end
 
   # Add to cache if ref isn't already there
