@@ -73,4 +73,16 @@ defmodule MarshalTest do
   test "Decode repeated symbol array with nesting" do
     assert Marshal.decode("\x04\b[\n:\napple:\vbanana;\x00[\a:\bcar;\x06;\a") == {"4.8", [:apple, :banana, :apple, [:car, :banana], :car]}
   end
+
+  test "Decode string with UTF-8 set" do
+    assert Marshal.decode("\x04\bI\"\napple\x06:\x06ET") == {"4.8", {"apple", [E: true]}}
+  end
+
+  test "Decode string with US-ASCII set" do
+    assert Marshal.decode("\x04\bI\"\nhello\x06:\x06EF") == {"4.8", {"hello", [E: false]}}
+  end
+
+  test "Decode string with Shift_JIS set" do
+    assert Marshal.decode("\x04\bI\"\nhello\x06:\rencoding\"\x0EShift_JIS") == {"4.8", {"hello", [encoding: "Shift_JIS"]}}
+  end
 end

@@ -27,6 +27,8 @@ defmodule Marshal do
   defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
   # Symbol links are preceded by the character ;
   defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
+  defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
+  defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -62,10 +64,9 @@ defmodule Marshal do
   end
 
   defp decode_symbol(bitstring, cache) do
-    # Get the number of characters in the symbol
-    {size, rest} = decode_fixnum(bitstring)
-    # Symbols are stored as utf8 characters
-    {symbol, rest} = get_utf8_string(rest, size, [])
+
+    # Decode string representation of symbol
+    {symbol, rest, cache} = decode_string(bitstring, cache)
 
     # Convert to an atom and store in the cache
     atom = String.to_atom(symbol)
@@ -75,9 +76,11 @@ defmodule Marshal do
   end
 
   # Retrieve the specified number of characters from the bitstring
-  defp get_utf8_string(rest, 0, acc), do: {acc |> Enum.reverse() |> to_string(), rest}
-  defp get_utf8_string(<<head::utf8, rest::binary>>, size, acc) do
-    get_utf8_string(rest, size - 1, [head | acc])
+  defp get_utf8_string(string, length), do: do_get_utf8_string(string, length, [])
+
+  defp do_get_utf8_string(rest, 0, acc), do: {acc |> Enum.reverse() |> to_string(), rest}
+  defp do_get_utf8_string(<<head::utf8, rest::binary>>, size, acc) do
+    do_get_utf8_string(rest, size - 1, [head | acc])
   end
 
   # Symbols that are reused get stored as references. Maintain a cache for future references
@@ -98,5 +101,39 @@ defmodule Marshal do
 
     {atom, _} = Enum.find(cache, fn({_, i}) -> i == index end)
     {atom, rest, cache}
+  end
+
+  # Decode an object with ivars
+  defp decode_ivar(bitstring, cache) do
+    #Get the object
+    {element, rest, cache} = decode_element(bitstring, cache)
+    #Get the number of vars
+    {size, rest} = decode_fixnum(rest)
+    #Get the vars
+    {vars, rest, cache} = get_ivars(rest, size, cache)
+
+    {{element, vars}, rest, cache}
+  end
+
+  # Recursively fetch ivars
+  defp get_ivars(bitstring, size, cache), do: do_get_ivars(bitstring, size, [], cache)
+
+  defp do_get_ivars(rest, 0, acc, cache), do: {acc |> Enum.reverse(), rest, cache}
+  defp do_get_ivars(bitstring, size, acc, cache) do
+    # Get var symbol
+    {symbol, rest, cache} = decode_element(bitstring, cache)
+    # Get var value
+    {value, rest, cache} = decode_element(rest, cache)
+
+    do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
+  end
+
+  # Decode UTF-8 encoded string
+  def  decode_string(bitstring, cache) do
+    # Get the number of characters in the string
+    {length, rest} = decode_fixnum(bitstring)
+    # Strings are stored as utf8
+    {string, rest} = get_utf8_string(rest, length)
+    {string, rest, cache}
   end
 end
