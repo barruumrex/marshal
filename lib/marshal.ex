@@ -23,6 +23,7 @@ defmodule Marshal do
   end
   # Arrays are preceded by the character [
   defp decode_element(<<"[", rest::binary>>, cache), do: decode_array(rest, cache)
+  defp decode_element(<<"{", rest::binary>>, cache), do: decode_hash(rest, cache)
   # Symbols are preceded by the characer :
   defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
   # Symbol links are preceded by the character ;
@@ -71,6 +72,31 @@ defmodule Marshal do
     {element, rest, cache} = decode_element(rest, cache)
 
     do_decode_array(rest, size - 1, [element | acc], cache)
+  end
+
+  defp decode_hash(bitstring, cache) do
+    # Get the size of the hash
+    {size, rest} = decode_fixnum(bitstring)
+
+    # Add placeholder to cache
+    cache = add_to_object_cache(bitstring, cache)
+
+    # Decode hash
+    {hash, rest, cache} = do_decode_hash(rest, size, %{}, cache)
+
+    # Replace placeholder with real object
+    cache = replace_object_cache(bitstring, hash, cache)
+
+    {hash, rest, cache}
+  end
+
+  # Recursively extract elements from the hash until you've reached the end.
+  defp do_decode_hash(rest, 0, acc, cache), do: {acc, rest, cache}
+  defp do_decode_hash(rest, size, acc, cache) do
+    {key, rest, cache} = decode_element(rest, cache)
+    {value, rest, cache} = decode_element(rest, cache)
+
+    do_decode_hash(rest, size - 1, Map.put(acc, key, value), cache)
   end
 
   defp decode_symbol(bitstring, cache) do

@@ -58,6 +58,10 @@ defmodule MarshalTest do
     assert Marshal.decode("\x04\b[\b0[\aTF[\bi\x06i\ai\b") == {"4.8", [nil, [true, false], [1, 2, 3,]]}
   end
 
+  test "Hash" do
+    assert Marshal.decode("\x04\b{\x06i\x06i\a") == {"4.8", %{1 => 2}}
+  end
+
   test "Decode symbol" do
     assert Marshal.decode("\x04\b:\napple") == {"4.8", :apple}
   end
