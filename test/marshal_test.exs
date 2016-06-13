@@ -85,4 +85,9 @@ defmodule MarshalTest do
   test "Decode string with Shift_JIS set" do
     assert Marshal.decode("\x04\bI\"\nhello\x06:\rencoding\"\x0EShift_JIS") == {"4.8", {"hello", [encoding: "Shift_JIS"]}}
   end
+
+  test "Repeated string" do
+    hello = {"hello", [E: true]}
+    assert Marshal.decode("\x04\b[\aI\"\nhello\x06:\x06ET@\x06") == {"4.8", [hello, hello]}
+  end
 end

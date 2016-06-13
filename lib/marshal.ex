@@ -7,7 +7,7 @@ defmodule Marshal do
   Decode a complete Marshal object. The first two bytes are always the Marshal version.
   """
   def decode(<<major::size(8), minor::size(8), rest::binary>>) do
-    {"#{major}.#{minor}", decode_element(rest, %{}) |> elem(0)}
+    {"#{major}.#{minor}", decode_element(rest, {%{}, %{base_object: 0}}) |> elem(0)}
   end
 
   # nil is stored as 0
@@ -29,6 +29,7 @@ defmodule Marshal do
   defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
   defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
   defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
+  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -70,7 +71,7 @@ defmodule Marshal do
 
     # Convert to an atom and store in the cache
     atom = String.to_atom(symbol)
-    cache = add_to_cache(atom, cache)
+    cache = add_to_symbol_cache(atom, cache)
 
     {atom, rest, cache}
   end
@@ -83,9 +84,19 @@ defmodule Marshal do
     do_get_utf8_string(rest, size - 1, [head | acc])
   end
 
-  # Symbols that are reused get stored as references. Maintain a cache for future references
-  defp add_to_cache(symbol, cache) do
-    Map.put_new_lazy(cache, symbol, fn -> get_next_index(cache) end)
+  # Symbols that are reused get stored as references. Maintain a cache for future reference
+  defp add_to_symbol_cache(symbol, {symbol_cache, object_cache}) do
+    {add_to_cache(symbol, symbol_cache), object_cache}
+  end
+
+  # Objects that are reused get stored as references. Maintain a cache for future reference
+  defp add_to_object_cache(object, {symbol_cache, object_cache}) do
+    {symbol_cache, add_to_cache(object, object_cache)}
+  end
+
+  # Add to cache if ref isn't already there
+  defp add_to_cache(element, cache) do
+    Map.put_new_lazy(cache, element, fn -> get_next_index(cache) end)
   end
 
   defp get_next_index(cache), do: do_get_next_index(Map.values(cache))
@@ -95,12 +106,26 @@ defmodule Marshal do
 
   defp increment(value), do: value + 1
 
-  # Retrieve a symbole from the cache
-  defp fetch_symbol(bitstring, cache) do
+  # Retrieve a symbol from the cache
+  defp fetch_symbol(bitstring, {symbol_cache, _object_cache} = cache) do
+    {atom, rest} = fetch_from_cache(bitstring, symbol_cache)
+    {atom, rest, cache}
+  end
+
+  # Retrieve an object from the cache
+  defp fetch_object(bitstring, {_symbol_cache, object_cache} = cache) do
+    decode_fixnum(bitstring)
+    {atom, rest} = fetch_from_cache(bitstring, object_cache)
+    {atom, rest, cache}
+  end
+
+  defp fetch_from_cache(bitstring, cache) do
+    # Get reference index
     {index, rest} = decode_fixnum(bitstring)
 
-    {atom, _} = Enum.find(cache, fn({_, i}) -> i == index end)
-    {atom, rest, cache}
+    # Retrieve element
+    {element, _} = Enum.find(cache, fn({_, i}) -> i == index end)
+    {element, rest}
   end
 
   # Decode an object with ivars
@@ -112,7 +137,10 @@ defmodule Marshal do
     #Get the vars
     {vars, rest, cache} = get_ivars(rest, size, cache)
 
-    {{element, vars}, rest, cache}
+    object = {element, vars}
+    cache = add_to_object_cache(object, cache)
+
+    {object, rest, cache}
   end
 
   # Recursively fetch ivars
