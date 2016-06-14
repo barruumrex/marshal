@@ -108,4 +108,18 @@ defmodule MarshalTest do
   test "Translated string" do
     assert Marshal.decode("\x04\bI\"\x06\xC5\x06:\rencoding\"\x0EShift_JIS") == {"4.8", {<<0xC5>>, [encoding: "Shift_JIS"]}}
   end
+
+  test "Decode string class" do
+    assert Marshal.decode("\x04\bc\vString") == {"4.8", {:class, "String"}}
+  end
+
+  test "Decode Math::DomainError class" do
+    assert Marshal.decode("\x04\bc\x16Math::DomainError") == {"4.8", {:class, "Math::DomainError"}}
+  end
+
+  test "Cached class" do
+    class = {:class, "String"}
+    object = %{1 => 2}
+    assert Marshal.decode("\x04\b[\tc\vString{\x06i\x06i\a@\a@\x06") == {"4.8", [class, object, object, class]}
+  end
 end

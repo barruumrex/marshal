@@ -31,6 +31,7 @@ defmodule Marshal do
   defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
   defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
   defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
+  defp decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -201,5 +202,14 @@ defmodule Marshal do
 
     <<string::binary-size(length), rest::binary>> = rest
     {string, rest, cache}
+  end
+
+  defp decode_class(bitstring, cache) do
+    {name, rest, cache} = decode_string(bitstring, cache)
+    class = {:class, name}
+
+    cache = add_to_object_cache(class, cache)
+
+    {class, rest, cache}
   end
 end
