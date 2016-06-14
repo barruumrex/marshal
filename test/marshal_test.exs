@@ -104,4 +104,8 @@ defmodule MarshalTest do
     a = %{1 => 2}
     assert Marshal.decode("\x04\b[\b[\x06{\x06i\x06i\a[\x06@\a[\a@\a@\a") == {"4.8", [[a], [a], [a, a]]}
   end
+
+  test "Translated string" do
+    assert Marshal.decode("\x04\bI\"\x06\xC5\x06:\rencoding\"\x0EShift_JIS") == {"4.8", {<<0xC5>>, [encoding: "Shift_JIS"]}}
+  end
 end

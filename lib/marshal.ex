@@ -111,14 +111,6 @@ defmodule Marshal do
     {atom, rest, cache}
   end
 
-  # Retrieve the specified number of characters from the bitstring
-  defp get_utf8_string(string, length), do: do_get_utf8_string(string, length, [])
-
-  defp do_get_utf8_string(rest, 0, acc), do: {acc |> Enum.reverse() |> to_string(), rest}
-  defp do_get_utf8_string(<<head::utf8, rest::binary>>, size, acc) do
-    do_get_utf8_string(rest, size - 1, [head | acc])
-  end
-
   # Symbols that are reused get stored as references. Maintain a cache for future reference
   defp add_to_symbol_cache(symbol, {symbol_cache, object_cache}) do
     {add_to_cache(symbol, symbol_cache), object_cache}
@@ -202,12 +194,12 @@ defmodule Marshal do
     do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
   end
 
-  # Decode UTF-8 encoded string
-  def  decode_string(bitstring, cache) do
+  # Decode string
+  defp decode_string(bitstring, cache) do
     # Get the number of characters in the string
     {length, rest} = decode_fixnum(bitstring)
-    # Strings are stored as utf8
-    {string, rest} = get_utf8_string(rest, length)
+
+    <<string::binary-size(length), rest::binary>> = rest
     {string, rest, cache}
   end
 end
