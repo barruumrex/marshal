@@ -137,4 +137,9 @@ defmodule MarshalTest do
     object_instance = {:object_instance, :DumpTest, ["@a": nil]}
     assert Marshal.decode("\x04\bo:\rDumpTest\x06:\a@a0") == {"4.8", object_instance}
   end
+
+  test "Cache user object instance" do
+    object_instance = {:object_instance, :DumpTest, ["@a": nil]}
+    assert Marshal.decode("\x04\b[\ao:\rDumpTest\x06:\a@a0@\x06") == {"4.8", [object_instance, object_instance]}
+  end
 end

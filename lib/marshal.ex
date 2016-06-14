@@ -232,7 +232,9 @@ defmodule Marshal do
     # Name is stored as a symbol
     {name, rest, cache} = decode_element(bitstring, cache)
     {vars, rest, cache} = get_vars(rest, cache)
+    object = {:object_instance, name, vars}
 
-    {{:object_instance, name, vars}, rest, cache}
+    cache = add_to_object_cache(object, cache)
+    {object, rest, cache}
   end
 end
