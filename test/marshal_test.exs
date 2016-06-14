@@ -122,4 +122,14 @@ defmodule MarshalTest do
     object = %{1 => 2}
     assert Marshal.decode("\x04\b[\tc\vString{\x06i\x06i\a@\a@\x06") == {"4.8", [class, object, object, class]}
   end
+
+  test "Decode module Enumerable" do
+    assert Marshal.decode("\x04\bm\x0FEnumerable") == {"4.8", {:module, "Enumerable"}}
+  end
+
+  test "Cached module" do
+    module = {:module, "Enumerable"}
+    object = %{1 => 2}
+    assert Marshal.decode("\x04\b[\tm\x0FEnumerable{\x06i\x06i\a@\a@\x06") == {"4.8", [module, object, object, module]}
+  end
 end
