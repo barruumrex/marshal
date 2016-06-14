@@ -142,4 +142,12 @@ defmodule MarshalTest do
     object_instance = {:object_instance, :DumpTest, ["@a": nil]}
     assert Marshal.decode("\x04\b[\ao:\rDumpTest\x06:\a@a0@\x06") == {"4.8", [object_instance, object_instance]}
   end
+
+  test "Decode float" do
+    assert Marshal.decode("\x04\bf\x0E12.256611") == {"4.8", 12.256611}
+  end
+
+  test "Cache float" do
+    assert Marshal.decode("\x04\b[\af\n12.11@\x06") == {"4.8", [12.11, 12.11]}
+  end
 end
