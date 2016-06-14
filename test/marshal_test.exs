@@ -150,4 +150,10 @@ defmodule MarshalTest do
   test "Cache float" do
     assert Marshal.decode("\x04\b[\af\n12.11@\x06") == {"4.8", [12.11, 12.11]}
   end
+
+  test "Decode U type" do
+    date_marshal = "\x04\bU:\rDateTime[\vi\x00i\x03\xD2\x7F%i\x02\x9A\xEFi\x04H\xFA\xAF!i\xFE\xC0\xC7f\f2299161"
+    date = {:usrmarshal, :DateTime, [0, 2457554, -4198, 565181000, -14400, 2299161.0]}
+    assert Marshal.decode(date_marshal) == {"4.8", date}
+  end
 end

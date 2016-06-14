@@ -35,6 +35,7 @@ defmodule Marshal do
   defp decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
   defp decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
   defp decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
+  defp decode_element(<<"U", rest::binary>>, cache), do: decode_usrmarshal(rest, cache)
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -249,5 +250,12 @@ defmodule Marshal do
 
     cache = add_to_object_cache(float, cache)
     {float, rest, cache}
+  end
+
+  defp decode_usrmarshal(bitstring, cache) do
+    {symbol, rest, cache} = decode_element(bitstring, cache)
+    {values, rest, cache} = decode_element(rest, cache)
+
+    {{:usrmarshal, symbol, values}, rest, cache}
   end
 end
