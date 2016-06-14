@@ -33,6 +33,7 @@ defmodule Marshal do
   defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
   defp decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
   defp decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
+  defp decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -172,10 +173,9 @@ defmodule Marshal do
   defp decode_ivar(bitstring, cache) do
     #Get the object
     {element, rest, cache} = decode_element(bitstring, cache)
-    #Get the number of vars
-    {size, rest} = decode_fixnum(rest)
+
     #Get the vars
-    {vars, rest, cache} = get_ivars(rest, size, cache)
+    {vars, rest, cache} = get_vars(rest, cache)
 
     object = {element, vars}
     cache = add_to_object_cache(object, cache)
@@ -184,7 +184,12 @@ defmodule Marshal do
   end
 
   # Recursively fetch ivars
-  defp get_ivars(bitstring, size, cache), do: do_get_ivars(bitstring, size, [], cache)
+  defp get_vars(bitstring, cache) do
+    #Get the number of vars
+    {size, rest} = decode_fixnum(bitstring)
+
+    do_get_ivars(rest, size, [], cache)
+  end
 
   defp do_get_ivars(rest, 0, acc, cache), do: {acc |> Enum.reverse(), rest, cache}
   defp do_get_ivars(bitstring, size, acc, cache) do
@@ -221,5 +226,13 @@ defmodule Marshal do
     cache = add_to_object_cache(module, cache)
 
     {module, rest, cache}
+  end
+
+  defp decode_object_instance(bitstring, cache) do
+    # Name is stored as a symbol
+    {name, rest, cache} = decode_element(bitstring, cache)
+    {vars, rest, cache} = get_vars(rest, cache)
+
+    {{:object_instance, name, vars}, rest, cache}
   end
 end

@@ -132,4 +132,9 @@ defmodule MarshalTest do
     object = %{1 => 2}
     assert Marshal.decode("\x04\b[\tm\x0FEnumerable{\x06i\x06i\a@\a@\x06") == {"4.8", [module, object, object, module]}
   end
+
+  test "Decode user object instance" do
+    object_instance = {:object_instance, :DumpTest, ["@a": nil]}
+    assert Marshal.decode("\x04\bo:\rDumpTest\x06:\a@a0") == {"4.8", object_instance}
+  end
 end
