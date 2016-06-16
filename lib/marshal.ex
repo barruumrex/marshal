@@ -7,36 +7,71 @@ defmodule Marshal do
   Decode a complete Marshal object. The first two bytes are always the Marshal version.
   """
   def decode(<<major::size(8), minor::size(8), rest::binary>>) do
-    {"#{major}.#{minor}", decode_element(rest, {%{}, %{}}) |> elem(0)}
+    {"#{major}.#{minor}", rest |> decode_element({%{}, %{}}) |> elem(0)}
   end
 
-  # nil is stored as 0
+
+  # define TYPE_NIL  '0'
   defp decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
-  # True is stored as T
+  # define TYPE_TRUE  'T'
   defp decode_element(<<"T", rest::binary>>, cache), do: {true, rest, cache}
-  # False is stored as F
+  # define TYPE_FALSE  'F'
   defp decode_element(<<"F", rest::binary>>, cache), do: {false, rest, cache}
-  # Small integers are preceded by the letter i
+  # define TYPE_FIXNUM  'i'
   defp decode_element(<<"i", rest::binary>>, cache) do
     {num, rest} = decode_fixnum(rest)
     {num, rest, cache}
   end
-  # Arrays are preceded by the character [
-  defp decode_element(<<"[", rest::binary>>, cache), do: decode_array(rest, cache)
-  defp decode_element(<<"{", rest::binary>>, cache), do: decode_hash(rest, cache)
-  # Symbols are preceded by the characer :
-  defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
-  # Symbol links are preceded by the character ;
-  defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
-  defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
-  defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
-  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
-  defp decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
-  defp decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
+
+  # define TYPE_EXTENDED    'e'
+  defp decode_element(<<"e", _rest::binary>>, _cache), do: missing("EXTENDED")
+  # define TYPE_UCLASS      'C'
+  defp decode_element(<<"C", _rest::binary>>, _cache), do: missing("UCLASS")
+  # define TYPE_OBJECT      'o'
   defp decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
-  defp decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
-  defp decode_element(<<"U", rest::binary>>, cache), do: decode_usrmarshal(rest, cache)
+  # define TYPE_DATA        'd'
+  defp decode_element(<<"d", _rest::binary>>, _cache), do: missing("DATA")
+  # define TYPE_USERDEF     'u'
   defp decode_element(<<"u", rest::binary>>, cache), do: decode_usrdef(rest, cache)
+  # define TYPE_USRMARSHAL  'U'
+  defp decode_element(<<"U", rest::binary>>, cache), do: decode_usrmarshal(rest, cache)
+  # define TYPE_FLOAT       'f'
+  defp decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
+  # define TYPE_BIGNUM      'l'
+  defp decode_element(<<"l", _rest::binary>>, _cache), do: missing("BIGNUM")
+  # define TYPE_STRING      '"'
+  defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
+  # define TYPE_REGEXP      '/'
+  defp decode_element(<<"/", _rest::binary>>, _cache), do: missing("REGEXP")
+  # define TYPE_ARRAY       '['
+  defp decode_element(<<"[", rest::binary>>, cache), do: decode_array(rest, cache)
+  # define TYPE_HASH        '{'
+  defp decode_element(<<"{", rest::binary>>, cache), do: decode_hash(rest, cache)
+  # define TYPE_HASH_DEF    '}'
+  defp decode_element(<<"}", _rest::binary>>, _cache), do: missing("HASH_DEF")
+  # define TYPE_STRUCT      'S'
+  defp decode_element(<<"S", _rest::binary>>, _cache), do: missing("STRUCT")
+  # define TYPE_MODULE_OLD  'M'
+  defp decode_element(<<"M", _rest::binary>>, _cache), do: missing("MODULE_OLD")
+  # define TYPE_CLASS       'c'
+  defp decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
+  # define TYPE_MODULE      'm'
+  defp decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
+
+  # define TYPE_SYMBOL      ':'
+  defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
+  # define TYPE_SYMLINK     ';'
+  defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
+
+  # define TYPE_IVAR        'I'
+  defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
+  # define TYPE_LINK        '@'
+  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
+  defp decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
+
+  defp missing(type) do
+    {:error, "Type:#{type} is not currently supported"}
+  end
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
@@ -207,9 +242,9 @@ defmodule Marshal do
   # Decode string
   defp decode_string(bitstring, cache) do
     # Get the number of characters in the string
-    {length, rest} = decode_fixnum(bitstring)
+    {size, rest} = decode_fixnum(bitstring)
 
-    <<string::binary-size(length), rest::binary>> = rest
+    <<string::binary-size(size), rest::binary>> = rest
     {string, rest, cache}
   end
 
