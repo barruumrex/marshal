@@ -37,7 +37,7 @@ defmodule Marshal do
   # define TYPE_FLOAT       'f'
   defp decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
   # define TYPE_BIGNUM      'l'
-  defp decode_element(<<"l", _rest::binary>>, _cache), do: missing("BIGNUM")
+  defp decode_element(<<"l", rest::binary>>, cache), do: decode_bignum(rest, cache)
   # define TYPE_STRING      '"'
   defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
   # define TYPE_REGEXP      '/'
@@ -132,6 +132,21 @@ defmodule Marshal do
 
     cache = Cache.add_to_object_cache(float, cache)
     {float, rest, cache}
+  end
+
+  defp decode_bignum(<<"+", rest::binary>>, cache), do: do_decode_bignum(rest, cache, 1)
+  defp decode_bignum(<<"-", rest::binary>>, cache), do: do_decode_bignum(rest, cache, -1)
+  defp do_decode_bignum(bitstring, cache, sign) do
+    # Length of bignum is divided by 2 and stored in a fixnum
+    {half_size, rest} = decode_fixnum(bitstring)
+    bits = half_size * 2 * 8
+
+    <<bignum::native-integer-size(bits), rest::binary>> = rest
+
+    signed_bignum = sign * bignum
+
+    cache = Cache.add_to_object_cache(signed_bignum, cache)
+    {signed_bignum, rest, cache}
   end
 
   # Decode string

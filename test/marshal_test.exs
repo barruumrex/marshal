@@ -162,4 +162,16 @@ defmodule MarshalTest do
     time = {{:Time, <<212, 21, 29, 128, 203, 164, 168, 157>>}, [offset: -14400, zone: {"EDT", [E: false]}]}
     assert Marshal.decode(time_marshal) == {"4.8", time}
   end
+
+  test "Bignum" do
+    bignum = 265252859812191058636308480000000
+    marshal = "\x04\bl+\f\x00\x00\x00T\xDD\xF5]\x86\x96\x0F7\xF6\x13\r"
+    assert Marshal.decode(marshal) == {"4.8", bignum}
+  end
+
+  test "Negative Bignum" do
+    bignum = -265252859812191058636308480000000
+    marshal = "\x04\bl-\f\x00\x00\x00T\xDD\xF5]\x86\x96\x0F7\xF6\x13\r"
+    assert Marshal.decode(marshal) == {"4.8", bignum}
+  end
 end
