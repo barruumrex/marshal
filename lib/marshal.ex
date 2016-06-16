@@ -61,16 +61,22 @@ defmodule Marshal do
   # define TYPE_SYMBOL      ':'
   defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
   # define TYPE_SYMLINK     ';'
-  defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
+  defp decode_element(<<";", rest::binary>>, cache) do
+    {index, rest} = decode_fixnum(rest)
+    Cache.fetch_symbol(rest, index, cache)
+  end
 
   # define TYPE_IVAR        'I'
   defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
   # define TYPE_LINK        '@'
-  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
+  defp decode_element(<<"@", rest::binary>>, cache) do
+    {index, rest} = decode_fixnum(rest)
+    Cache.fetch_object(rest, index, cache)
+  end
   defp decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
 
   defp missing(type) do
-    {:error, "Type:#{type} is not currently supported"}
+    {{:error, "Type:#{type} is not currently supported"}}
   end
 
   # Small integers are called fixnums
@@ -96,13 +102,13 @@ defmodule Marshal do
     {size, rest} = decode_fixnum(bitstring)
 
     # Add placeholder to cache
-    cache = add_to_object_cache(bitstring, cache)
+    cache = Cache.add_to_object_cache(bitstring, cache)
 
     # Decode array
     {array, rest, cache} = do_decode_array(rest, size, [], cache)
 
     # Replace placeholder with real object
-    cache = replace_object_cache(bitstring, array, cache)
+    cache = Cache.replace_object_cache(bitstring, array, cache)
 
     {array, rest, cache}
   end
@@ -120,13 +126,13 @@ defmodule Marshal do
     {size, rest} = decode_fixnum(bitstring)
 
     # Add placeholder to cache
-    cache = add_to_object_cache(bitstring, cache)
+    cache = Cache.add_to_object_cache(bitstring, cache)
 
     # Decode hash
     {hash, rest, cache} = do_decode_hash(rest, size, %{}, cache)
 
     # Replace placeholder with real object
-    cache = replace_object_cache(bitstring, hash, cache)
+    cache = Cache.replace_object_cache(bitstring, hash, cache)
 
     {hash, rest, cache}
   end
@@ -147,65 +153,11 @@ defmodule Marshal do
 
     # Convert to an atom and store in the cache
     atom = String.to_atom(symbol)
-    cache = add_to_symbol_cache(atom, cache)
+    cache = Cache.add_to_symbol_cache(atom, cache)
 
     {atom, rest, cache}
   end
 
-  # Symbols that are reused get stored as references. Maintain a cache for future reference
-  defp add_to_symbol_cache(symbol, {symbol_cache, object_cache}) do
-    {add_to_cache(symbol, symbol_cache), object_cache}
-  end
-
-  # Objects that are reused get stored as references. Maintain a cache for future reference
-  defp add_to_object_cache(object, {symbol_cache, object_cache}) do
-    {symbol_cache, add_to_cache(object, object_cache)}
-  end
-
-  defp replace_object_cache(old, new, {symbol_cache, object_cache}) do
-    ref = object_cache[old]
-
-    object_cache =
-      object_cache
-      |> Map.delete(old)
-      |> Map.put(new, ref)
-
-    {symbol_cache, object_cache}
-  end
-
-  # Add to cache if ref isn't already there
-  defp add_to_cache(element, cache) do
-    Map.put_new_lazy(cache, element, fn -> get_next_index(cache) end)
-  end
-
-  defp get_next_index(cache), do: do_get_next_index(Map.values(cache))
-
-  defp do_get_next_index([]), do: 0
-  defp do_get_next_index(indices), do: indices |> Enum.max() |> increment()
-
-  defp increment(value), do: value + 1
-
-  # Retrieve a symbol from the cache
-  defp fetch_symbol(bitstring, {symbol_cache, _object_cache} = cache) do
-    {atom, rest} = fetch_from_cache(bitstring, symbol_cache)
-    {atom, rest, cache}
-  end
-
-  # Retrieve an object from the cache
-  defp fetch_object(bitstring, {_symbol_cache, object_cache} = cache) do
-    decode_fixnum(bitstring)
-    {atom, rest} = fetch_from_cache(bitstring, object_cache)
-    {atom, rest, cache}
-  end
-
-  defp fetch_from_cache(bitstring, cache) do
-    # Get reference index
-    {index, rest} = decode_fixnum(bitstring)
-
-    # Retrieve element
-    {element, _} = Enum.find(cache, fn({_, i}) -> i == index end)
-    {element, rest}
-  end
 
   # Decode an object with ivars
   defp decode_ivar(bitstring, cache) do
@@ -216,7 +168,7 @@ defmodule Marshal do
     {vars, rest, cache} = get_vars(rest, cache)
 
     object = {element, vars}
-    cache = add_to_object_cache(object, cache)
+    cache = Cache.add_to_object_cache(object, cache)
 
     {object, rest, cache}
   end
@@ -252,7 +204,7 @@ defmodule Marshal do
     {name, rest, cache} = decode_string(bitstring, cache)
     class = {:class, name}
 
-    cache = add_to_object_cache(class, cache)
+    cache = Cache.add_to_object_cache(class, cache)
 
     {class, rest, cache}
   end
@@ -261,7 +213,7 @@ defmodule Marshal do
     {name, rest, cache} = decode_string(bitstring, cache)
     module = {:module, name}
 
-    cache = add_to_object_cache(module, cache)
+    cache = Cache.add_to_object_cache(module, cache)
 
     {module, rest, cache}
   end
@@ -272,7 +224,7 @@ defmodule Marshal do
     {vars, rest, cache} = get_vars(rest, cache)
     object = {:object_instance, name, vars}
 
-    cache = add_to_object_cache(object, cache)
+    cache = Cache.add_to_object_cache(object, cache)
     {object, rest, cache}
   end
 
@@ -284,7 +236,7 @@ defmodule Marshal do
       |> Float.parse()
       |> elem(0)
 
-    cache = add_to_object_cache(float, cache)
+    cache = Cache.add_to_object_cache(float, cache)
     {float, rest, cache}
   end
 
