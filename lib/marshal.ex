@@ -11,13 +11,13 @@ defmodule Marshal do
   end
 
 
-  # define TYPE_NIL  '0'
+  # define TYPE_NIL         '0'
   defp decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
-  # define TYPE_TRUE  'T'
+  # define TYPE_TRUE        'T'
   defp decode_element(<<"T", rest::binary>>, cache), do: {true, rest, cache}
-  # define TYPE_FALSE  'F'
+  # define TYPE_FALSE       'F'
   defp decode_element(<<"F", rest::binary>>, cache), do: {false, rest, cache}
-  # define TYPE_FIXNUM  'i'
+  # define TYPE_FIXNUM      'i'
   defp decode_element(<<"i", rest::binary>>, cache) do
     {num, rest} = decode_fixnum(rest)
     {num, rest, cache}
@@ -63,7 +63,8 @@ defmodule Marshal do
   # define TYPE_SYMLINK     ';'
   defp decode_element(<<";", rest::binary>>, cache) do
     {index, rest} = decode_fixnum(rest)
-    Cache.fetch_symbol(rest, index, cache)
+    symbol = Cache.fetch_symbol(index, cache)
+    {symbol, rest, cache}
   end
 
   # define TYPE_IVAR        'I'
@@ -71,7 +72,8 @@ defmodule Marshal do
   # define TYPE_LINK        '@'
   defp decode_element(<<"@", rest::binary>>, cache) do
     {index, rest} = decode_fixnum(rest)
-    Cache.fetch_object(rest, index, cache)
+    object = Cache.fetch_object(index, cache)
+    {object, rest, cache}
   end
   defp decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
 
