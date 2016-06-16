@@ -10,7 +10,6 @@ defmodule Marshal do
     {"#{major}.#{minor}", rest |> decode_element({%{}, %{}}) |> elem(0)}
   end
 
-
   # define TYPE_NIL         '0'
   defp decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
   # define TYPE_TRUE        'T'
@@ -61,20 +60,13 @@ defmodule Marshal do
   # define TYPE_SYMBOL      ':'
   defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
   # define TYPE_SYMLINK     ';'
-  defp decode_element(<<";", rest::binary>>, cache) do
-    {index, rest} = decode_fixnum(rest)
-    symbol = Cache.fetch_symbol(index, cache)
-    {symbol, rest, cache}
-  end
+  defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
 
   # define TYPE_IVAR        'I'
   defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
   # define TYPE_LINK        '@'
-  defp decode_element(<<"@", rest::binary>>, cache) do
-    {index, rest} = decode_fixnum(rest)
-    object = Cache.fetch_object(index, cache)
-    {object, rest, cache}
-  end
+  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
+
   defp decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
 
   defp missing(type) do
@@ -98,6 +90,58 @@ defmodule Marshal do
   defp decode_multibyte_fixnum(3, <<num::signed-little-integer-size(24), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
+
+  defp decode_object_instance(bitstring, cache) do
+    # Name is stored as a symbol.
+    {name, rest, cache} = decode_element(bitstring, cache)
+    {vars, rest, cache} = get_vars(rest, cache)
+    object = {:object_instance, name, vars}
+
+    cache = Cache.add_to_object_cache(object, cache)
+    {object, rest, cache}
+  end
+
+  defp decode_usrdef(bitstring, cache) do
+    # Name of the user defined type is stored as a symbol.
+    {symbol, rest, cache} = decode_element(bitstring, cache)
+
+    # Fetch the bare binary data. Extracting the data in the responsibility of the type.
+    {size, rest} = decode_fixnum(rest)
+    <<number::binary-size(size), rest::binary>> = rest
+
+    {{symbol, number}, rest, cache}
+  end
+
+  defp decode_usrmarshal(bitstring, cache) do
+    # Name of the user defined marshal is stored as a symbol.
+    {symbol, rest, cache} = decode_element(bitstring, cache)
+    # Values are stored in an array.
+    {values, rest, cache} = decode_element(rest, cache)
+
+    {{:usrmarshal, symbol, values}, rest, cache}
+  end
+
+  defp decode_float(bitstring, cache) do
+    # Floats are string representations of floats.
+    {number, rest, cache} = decode_string(bitstring, cache)
+
+    float =
+      number
+      |> Float.parse()
+      |> elem(0)
+
+    cache = Cache.add_to_object_cache(float, cache)
+    {float, rest, cache}
+  end
+
+  # Decode string
+  defp decode_string(bitstring, cache) do
+    # Get the number of characters in the string
+    {size, rest} = decode_fixnum(bitstring)
+
+    <<string::binary-size(size), rest::binary>> = rest
+    {string, rest, cache}
+  end
 
   defp decode_array(bitstring, cache) do
     # Get the size of the array
@@ -148,8 +192,27 @@ defmodule Marshal do
     do_decode_hash(rest, size - 1, Map.put(acc, key, value), cache)
   end
 
-  defp decode_symbol(bitstring, cache) do
+  defp decode_class(bitstring, cache) do
+    # Class name is stored as a string
+    {name, rest, cache} = decode_string(bitstring, cache)
+    class = {:class, name}
 
+    cache = Cache.add_to_object_cache(class, cache)
+
+    {class, rest, cache}
+  end
+
+  defp decode_module(bitstring, cache) do
+    # Module name is stored as a string
+    {name, rest, cache} = decode_string(bitstring, cache)
+    module = {:module, name}
+
+    cache = Cache.add_to_object_cache(module, cache)
+
+    {module, rest, cache}
+  end
+
+  defp decode_symbol(bitstring, cache) do
     # Decode string representation of symbol
     {symbol, rest, cache} = decode_string(bitstring, cache)
 
@@ -158,6 +221,14 @@ defmodule Marshal do
     cache = Cache.add_to_symbol_cache(atom, cache)
 
     {atom, rest, cache}
+  end
+
+  defp fetch_symbol(bitstring, cache) do
+    # Get index of the symbol
+    {index, rest} = decode_fixnum(bitstring)
+
+    symbol = Cache.fetch_symbol(index, cache)
+    {symbol, rest, cache}
   end
 
 
@@ -193,67 +264,11 @@ defmodule Marshal do
     do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
   end
 
-  # Decode string
-  defp decode_string(bitstring, cache) do
-    # Get the number of characters in the string
-    {size, rest} = decode_fixnum(bitstring)
+  defp fetch_object(bitstring, cache) do
+    # Get index of the object
+    {index, rest} = decode_fixnum(bitstring)
 
-    <<string::binary-size(size), rest::binary>> = rest
-    {string, rest, cache}
-  end
-
-  defp decode_class(bitstring, cache) do
-    {name, rest, cache} = decode_string(bitstring, cache)
-    class = {:class, name}
-
-    cache = Cache.add_to_object_cache(class, cache)
-
-    {class, rest, cache}
-  end
-
-  defp decode_module(bitstring, cache) do
-    {name, rest, cache} = decode_string(bitstring, cache)
-    module = {:module, name}
-
-    cache = Cache.add_to_object_cache(module, cache)
-
-    {module, rest, cache}
-  end
-
-  defp decode_object_instance(bitstring, cache) do
-    # Name is stored as a symbol
-    {name, rest, cache} = decode_element(bitstring, cache)
-    {vars, rest, cache} = get_vars(rest, cache)
-    object = {:object_instance, name, vars}
-
-    cache = Cache.add_to_object_cache(object, cache)
+    object = Cache.fetch_object(index, cache)
     {object, rest, cache}
-  end
-
-  defp decode_float(bitstring, cache) do
-    {size, rest} = decode_fixnum(bitstring)
-    <<number::binary-size(size), rest::binary>> = rest
-    float =
-      number
-      |> Float.parse()
-      |> elem(0)
-
-    cache = Cache.add_to_object_cache(float, cache)
-    {float, rest, cache}
-  end
-
-  defp decode_usrmarshal(bitstring, cache) do
-    {symbol, rest, cache} = decode_element(bitstring, cache)
-    {values, rest, cache} = decode_element(rest, cache)
-
-    {{:usrmarshal, symbol, values}, rest, cache}
-  end
-
-  defp decode_usrdef(bitstring, cache) do
-    {symbol, rest, cache} = decode_element(bitstring, cache)
-    {size, rest} = decode_fixnum(rest)
-    <<number::binary-size(size), rest::binary>> = rest
-
-    {{symbol, number}, rest, cache}
   end
 end
