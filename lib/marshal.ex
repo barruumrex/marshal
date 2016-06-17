@@ -92,6 +92,9 @@ defmodule Marshal do
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
 
   defp decode_usrclass(bitstring, cache) do
+    # Reserve cache
+    cache = Cache.add_to_object_cache(bitstring, cache)
+
     # Name is stored as a symbol
     {name, rest, cache} = decode_element(bitstring, cache)
     # Rest is stored as an element
@@ -99,17 +102,20 @@ defmodule Marshal do
 
     usrclass = {:usrclass, name, data}
 
-    cache = Cache.add_to_object_cache(usrclass, cache)
+    cache = Cache.replace_object_cache(bitstring, usrclass, cache)
     {usrclass, rest, cache}
   end
 
   defp decode_object_instance(bitstring, cache) do
+    # Reserve cache
+    cache = Cache.add_to_object_cache(bitstring, cache)
+
     # Name is stored as a symbol.
     {name, rest, cache} = decode_element(bitstring, cache)
     {vars, rest, cache} = get_vars(rest, cache)
     object = {:object_instance, name, vars}
 
-    cache = Cache.add_to_object_cache(object, cache)
+    cache = Cache.replace_object_cache(bitstring, object, cache)
     {object, rest, cache}
   end
 
@@ -264,14 +270,17 @@ defmodule Marshal do
 
   # Decode an object with ivars
   defp decode_ivar(bitstring, cache) do
-    #Get the object
+    # Reserve cache
+    cache = Cache.add_to_object_cache(bitstring, cache)
+
+    # Get the object
     {element, rest, cache} = decode_element(bitstring, cache)
 
-    #Get the vars
+    # Get the vars
     {vars, rest, cache} = get_vars(rest, cache)
 
     object = {element, vars}
-    cache = Cache.add_to_object_cache(object, cache)
+    cache = Cache.replace_object_cache(bitstring, object, cache)
 
     {object, rest, cache}
   end

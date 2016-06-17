@@ -180,4 +180,16 @@ defmodule MarshalTest do
     marshal = "\x04\bIC:\rStrClone\"\ttest\x06:\x06ET"
     assert Marshal.decode(marshal) == {"4.8", user_class}
   end
+
+  test "User class cache" do
+    usr_class = {{:usrclass, :StrClone, "test"}, [E: true]}
+    marshal = "\x04\b[\aIC:\rStrClone\"\ttest\x06:\x06ET@\x06"
+    assert Marshal.decode(marshal) == {"4.8", [usr_class, usr_class]}
+  end
+
+  test "User def cache" do
+    usr_def = {:usrdef, :C, "a"}
+    marshal = "\x04\b[\au:\x06C\x06a@\x06"
+    assert Marshal.decode(marshal) == {"4.8", [usr_def, usr_def]}
+  end
 end
