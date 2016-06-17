@@ -121,7 +121,10 @@ defmodule Marshal do
     {size, rest} = decode_fixnum(rest)
     <<number::binary-size(size), rest::binary>> = rest
 
-    {{symbol, number}, rest, cache}
+    usrdef = {:usrdef, symbol, number}
+
+    cache = Cache.add_to_object_cache(usrdef, cache)
+    {usrdef, rest, cache}
   end
 
   defp decode_usrmarshal(bitstring, cache) do

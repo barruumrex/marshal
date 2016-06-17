@@ -159,7 +159,7 @@ defmodule MarshalTest do
 
   test "Decode u type" do
     time_marshal = "\x04\bIu:\tTime\r\xD4\x15\x1D\x80\xCB\xA4\xA8\x9D\a:\voffseti\xFE\xC0\xC7:\tzoneI\"\bEDT\x06:\x06EF"
-    time = {{:Time, <<212, 21, 29, 128, 203, 164, 168, 157>>}, [offset: -14400, zone: {"EDT", [E: false]}]}
+    time = {{:usrdef, :Time, <<212, 21, 29, 128, 203, 164, 168, 157>>}, [offset: -14400, zone: {"EDT", [E: false]}]}
     assert Marshal.decode(time_marshal) == {"4.8", time}
   end
 
