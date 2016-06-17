@@ -269,7 +269,12 @@ defmodule Marshal do
     {symbol, rest, cache} = decode_string(bitstring, cache)
 
     # Convert to an atom and store in the cache
-    atom = String.to_atom(symbol)
+    atom =
+      try do
+        String.to_atom(symbol)
+      rescue
+        ArgumentError -> {:symbol, symbol}
+      end
     cache = Cache.add_to_symbol_cache(atom, cache)
 
     {atom, rest, cache}

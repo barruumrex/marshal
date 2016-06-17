@@ -47,4 +47,14 @@ defmodule RubyMarshalTest do
     struct = {:struct, :C3, %{bar: {"BAR", [E: true]}, foo: {"FOO", [E: true]}}}
     assert Marshal.decode(marshal) == {"4.8", struct}
   end
+
+  test "test_marshal.rb:245" do
+    marshal = "\x04\b:\truby"
+    symbol = :ruby
+    assert Marshal.decode(marshal) == {"4.8", symbol}
+
+    marshal = "\x04\bI:\v\xE7\xB4\x85\xE7\x8E\x89\x06:\x06ET"
+    symbol = {{:symbol, "紅玉"}, [E: true]}
+    assert Marshal.decode(marshal) == {"4.8", symbol}
+  end
 end
