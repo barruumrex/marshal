@@ -261,6 +261,7 @@ defmodule Marshal do
     cache = Cache.replace_object_cache(bitstring, default_hash, cache)
     {default_hash, rest, cache}
   end
+
   defp decode_struct(bitstring, cache) do
     # Reserve cache
     cache = Cache.add_to_object_cache(bitstring, cache)
@@ -271,10 +272,10 @@ defmodule Marshal do
     # Decode array
     {values, rest, cache} = do_decode_hash(rest, size, %{}, cache)
 
-    struct = {:struct, name, values}
+    struct_data = {:struct, name, values}
     # Replace placeholder with real object
-    cache = Cache.replace_object_cache(bitstring, struct, cache)
-    {struct, rest, cache}
+    cache = Cache.replace_object_cache(bitstring, struct_data, cache)
+    {struct_data, rest, cache}
   end
 
   defp decode_class(bitstring, cache) do
