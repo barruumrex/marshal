@@ -215,4 +215,19 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", overextended}
   end
+
+  test "Hash with default" do
+    hash_def = {:default_hash, %{}, 6}
+    marshal = "\x04\b}\x00i\v"
+
+    assert Marshal.decode(marshal) == {"4.8", hash_def}
+  end
+
+  test "Hash def" do
+    hash_default = {:default_hash, %{4 => 5}, 8}
+    defined_class = {{:usrclass, :MyHash, hash_default}, ["@v": 7]}
+    marshal = "\x04\bIC:\vMyHash}\x06i\ti\ni\r\x06:\a@vi\f"
+
+    assert Marshal.decode(marshal) == {"4.8", defined_class}
+  end
 end
