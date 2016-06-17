@@ -25,4 +25,26 @@ defmodule RubyMarshalTest do
     usrclass = {{:usrclass, :StrClone, "abc"}, [E: true]}
     assert Marshal.decode(marshal) == {"4.8", usrclass}
   end
+
+  test "test_marshal.rb:97" do
+    marshal = "\x04\bIu:\x06C\a\xA4\xA4\x06:\rencoding\"\vEUC-JP"
+    usrdef = {{:usrdef, :C, <<164, 164>>}, [encoding: "EUC-JP"]}
+    assert Marshal.decode(marshal) == {"4.8", usrdef}
+  end
+
+  test "test_marshal.rb:125" do
+    assert Marshal.decode("\x04\b[\x06[\x06[\x00") == {"4.8", [[[]]]}
+  end
+
+  test "test_marshal.rb:127" do
+    marshal = "\x04\bI\"\b\xE3\x81\x82\x06:\x06ET"
+    string = {"あ", [E: true]}
+    assert Marshal.decode(marshal) == {"4.8", string}
+  end
+
+  test "test_marshal.rb:169" do
+    marshal = "\x04\bS:\aC3\a:\bfooI\"\bFOO\x06:\x06ET:\bbarI\"\bBAR\x06;\aT"
+    struct = {:struct, :C3, %{bar: {"BAR", [E: true]}, foo: {"FOO", [E: true]}}}
+    assert Marshal.decode(marshal) == {"4.8", struct}
+  end
 end

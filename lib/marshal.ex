@@ -49,7 +49,7 @@ defmodule Marshal do
   # define TYPE_HASH_DEF    '}'
   defp decode_element(<<"}", _rest::binary>>, _cache), do: missing("HASH_DEF")
   # define TYPE_STRUCT      'S'
-  defp decode_element(<<"S", _rest::binary>>, _cache), do: missing("STRUCT")
+  defp decode_element(<<"S", rest::binary>>, cache), do: decode_struct(rest, cache)
   # define TYPE_MODULE_OLD  'M'
   defp decode_element(<<"M", _rest::binary>>, _cache), do: missing("MODULE_OLD")
   # define TYPE_CLASS       'c'
@@ -226,6 +226,22 @@ defmodule Marshal do
     {value, rest, cache} = decode_element(rest, cache)
 
     do_decode_hash(rest, size - 1, Map.put(acc, key, value), cache)
+  end
+
+  defp decode_struct(bitstring, cache) do
+    # Reserve cache
+    cache = Cache.add_to_object_cache(bitstring, cache)
+
+    {name, rest, cache} = decode_element(bitstring, cache)
+    {size, rest} = decode_fixnum(rest)
+
+    # Decode array
+    {values, rest, cache} = do_decode_hash(rest, size, %{}, cache)
+
+    struct = {:struct, name, values}
+    # Replace placeholder with real object
+    cache = Cache.replace_object_cache(bitstring, struct, cache)
+    {struct, rest, cache}
   end
 
   defp decode_class(bitstring, cache) do

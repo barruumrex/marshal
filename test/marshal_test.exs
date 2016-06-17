@@ -192,4 +192,13 @@ defmodule MarshalTest do
     marshal = "\x04\b[\au:\x06C\x06a@\x06"
     assert Marshal.decode(marshal) == {"4.8", [usr_def, usr_def]}
   end
+
+  test "Struct with cache" do
+    foo = {"FOO", [E: true]}
+    bar = {"BAR", [E: true]}
+    struct = {:struct, :C3, %{foo: foo, bar: bar}}
+    marshal = "\x04\b[\tS:\aC3\a:\bfooI\"\bFOO\x06:\x06ET:\bbarI\"\bBAR\x06;\aT@\a@\b@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [struct, foo, bar, struct]}
+  end
 end
