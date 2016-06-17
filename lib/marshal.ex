@@ -23,7 +23,7 @@ defmodule Marshal do
   end
 
   # define TYPE_EXTENDED    'e'
-  defp decode_element(<<"e", _rest::binary>>, _cache), do: missing("EXTENDED")
+  defp decode_element(<<"e", rest::binary>>, cache), do: decode_extended(rest, cache)
   # define TYPE_UCLASS      'C'
   defp decode_element(<<"C", rest::binary>>, cache), do: decode_usrclass(rest, cache)
   # define TYPE_OBJECT      'o'
@@ -90,6 +90,21 @@ defmodule Marshal do
   defp decode_multibyte_fixnum(3, <<num::signed-little-integer-size(24), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
+
+  defp decode_extended(bitstring, cache) do
+    # Reserve cache
+    cache = Cache.add_to_object_cache(bitstring, cache)
+
+    # Object being extended
+    {name, rest, cache} = decode_element(bitstring, cache)
+    # Object data
+    {object, rest, cache} = decode_element(rest, cache)
+
+    extended = {:extended, name, object}
+
+    cache = Cache.replace_object_cache(bitstring, extended, cache)
+    {extended, rest, cache}
+  end
 
   defp decode_usrclass(bitstring, cache) do
     # Reserve cache

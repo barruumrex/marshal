@@ -201,4 +201,18 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", [struct, foo, bar, struct]}
   end
+
+  test "Extended object" do
+    extended = {:extended, :Mod1, {:object_instance, :Object, []}}
+    marshal = "\x04\be:\tMod1o:\vObject\x00"
+
+    assert Marshal.decode(marshal) == {"4.8", extended}
+  end
+
+  test "Nested extensions" do
+    overextended = {:extended, :Mod2, {:extended, :Mod1, {:object_instance, :Object, []}}}
+    marshal = "\x04\be:\tMod2e:\tMod1o:\vObject\x00"
+
+    assert Marshal.decode(marshal) == {"4.8", overextended}
+  end
 end

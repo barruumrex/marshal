@@ -57,4 +57,34 @@ defmodule RubyMarshalTest do
     symbol = {{:symbol, "紅玉"}, [E: true]}
     assert Marshal.decode(marshal) == {"4.8", symbol}
   end
+
+  test "test_marshal.rb:478" do
+    marshal = "\x04\bU:\fComplex[\ai\x06i\a"
+    complex = {:usrmarshal, :Complex, [1, 2]}
+    assert Marshal.decode(marshal) == {"4.8", complex}
+  end
+
+  test "test_marshal.rb:485" do
+    marshal = "\x04\bU:\rRational[\ai\x06i\a"
+    rational = {:usrmarshal, :Rational, [1, 2]}
+    assert Marshal.decode(marshal) == {"4.8", rational}
+  end
+
+  test "test_marshal.rb:493" do
+    marshal = "\x04\b[\a[\af\x062[\x00[\x06@\b"
+    arrays = [[2.0, []], [[]]]
+    assert Marshal.decode(marshal) == {"4.8", arrays}
+  end
+
+  test "test_marshal.rb:524" do
+    marshal = "\x04\bU:\fBug7627I\"\tdump\x06:\x06ET"
+    struct_ivar = {:usrmarshal, :Bug7627, {"dump", [E: true]}}
+    assert Marshal.decode(marshal) == {"4.8", struct_ivar}
+  end
+
+  test "test_marshal.rb:561" do
+    marshal = "\x04\bU:\fBug8276I\"\"[ruby-core:54334] [Bug #8276]\x06:\x06ET"
+    excess_encoding = {:usrmarshal, :Bug8276, {"[ruby-core:54334] [Bug #8276]", [E: true]}}
+    assert Marshal.decode(marshal) == {"4.8", excess_encoding}
+  end
 end
