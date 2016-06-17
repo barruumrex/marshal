@@ -25,7 +25,7 @@ defmodule Marshal do
   # define TYPE_EXTENDED    'e'
   defp decode_element(<<"e", _rest::binary>>, _cache), do: missing("EXTENDED")
   # define TYPE_UCLASS      'C'
-  defp decode_element(<<"C", _rest::binary>>, _cache), do: missing("UCLASS")
+  defp decode_element(<<"C", rest::binary>>, cache), do: decode_usrclass(rest, cache)
   # define TYPE_OBJECT      'o'
   defp decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
   # define TYPE_DATA        'd'
@@ -90,6 +90,18 @@ defmodule Marshal do
   defp decode_multibyte_fixnum(3, <<num::signed-little-integer-size(24), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
+
+  defp decode_usrclass(bitstring, cache) do
+    # Name is stored as a symbol
+    {name, rest, cache} = decode_element(bitstring, cache)
+    # Rest is stored as an element
+    {data, rest, cache} = decode_element(rest, cache)
+
+    usrclass = {:usrclass, name, data}
+
+    cache = Cache.add_to_object_cache(usrclass, cache)
+    {usrclass, rest, cache}
+  end
 
   defp decode_object_instance(bitstring, cache) do
     # Name is stored as a symbol.

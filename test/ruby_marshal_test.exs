@@ -9,4 +9,20 @@ defmodule RubyMarshalTest do
     result = [1, 2, 3, [4, 5, {"foo", [E: true]}], %{1 => {"bar", [E: true]}}, 2.5, 265252859812191058636308480000000]
     assert Marshal.decode(a) == {"4.8", result}
   end
+
+  test "test_marshal.rb:42" do
+    marshal = "\x04\bf\x163.956015276338614"
+    float = 3.956015276338614
+    assert Marshal.decode(marshal) == {"4.8", float}
+
+    marshal = "\x04\bf\x193.751767503646127e17"
+    float = 375176750364612700.0
+    assert Marshal.decode(marshal) == {"4.8", float}
+  end
+
+  test "test_marshal.rb:53" do
+    marshal = "\x04\bIC:\rStrClone\"\babc\x06:\x06ET"
+    usrclass = {{:usrclass, :StrClone, "abc"}, [E: true]}
+    assert Marshal.decode(marshal) == {"4.8", usrclass}
+  end
 end

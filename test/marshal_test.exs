@@ -174,4 +174,10 @@ defmodule MarshalTest do
     marshal = "\x04\bl-\f\x00\x00\x00T\xDD\xF5]\x86\x96\x0F7\xF6\x13\r"
     assert Marshal.decode(marshal) == {"4.8", bignum}
   end
+
+  test "User Class" do
+    user_class = {{:usrclass, :StrClone, "test"}, [E: true]}
+    marshal = "\x04\bIC:\rStrClone\"\ttest\x06:\x06ET"
+    assert Marshal.decode(marshal) == {"4.8", user_class}
+  end
 end
