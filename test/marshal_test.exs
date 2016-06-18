@@ -258,4 +258,23 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", recursive_string}
   end
+
+  test "Standard ivar order" do
+    string = {"apple", [E: true]}
+    string_with_ivar = {"test", [E: true, "@z": 1, "@y": string]}
+    marshal = "\x04\b[\bI\"\ttest\b:\x06ET:\a@zi\x06:\a@yI\"\napple\x06;\x00T@\x06@\a"
+
+    assert Marshal.decode(marshal) == {"4.8", [string_with_ivar, string_with_ivar, string]}
+  end
+
+  test "ivar order is different for user defined object" do
+    apple = {"apple", [E: true]}
+    tz = {"EDT", [E: false]}
+    time_with_ivar = {{:usrdef, :Time, <<85, 22, 29, 128, 106, 43, 175, 139>>},
+                      ["@remove": apple, offset: -14400, zone: tz]}
+
+    marshal = "\x04\b[\tIu:\tTime\rU\x16\x1D\x80j+\xAF\x8B\b:\f@removeI\"\napple\x06:\x06ET:\voffseti\xFE\xC0\xC7:\tzoneI\"\bEDT\x06;\aF@\x06@\a@\b"
+
+    assert Marshal.decode(marshal) == {"4.8", [time_with_ivar, apple, tz, time_with_ivar]}
+  end
 end
