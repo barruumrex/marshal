@@ -251,4 +251,11 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", nan}
   end
+
+  test "Recursive cache" do
+    recursive_string = {{:usrclass, :MyString, "b"}, [E: true, "@v": :self]}
+    marshal = "\x04\bIC:\rMyString\"\x06b\a:\x06ET:\a@v@\x00"
+
+    assert Marshal.decode(marshal) == {"4.8", recursive_string}
+  end
 end

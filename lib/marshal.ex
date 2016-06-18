@@ -166,7 +166,7 @@ defmodule Marshal do
         "inf" -> {:float, :infinity}
         "-inf" -> {:float, :neg_infinity}
         "nan" -> {:float, :nan}
-        num -> num
+        _ -> number
           |> Float.parse()
           |> elem(0)
       end
@@ -367,7 +367,11 @@ defmodule Marshal do
     # Get index of the object
     {index, rest} = decode_fixnum(bitstring)
 
-    object = Cache.fetch_object(index, cache)
+    object =
+      case index do
+        0 -> :self
+        _ -> Cache.fetch_object(index, cache)
+      end
     {object, rest, cache}
   end
 end
