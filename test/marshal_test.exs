@@ -230,4 +230,25 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", defined_class}
   end
+
+  test "Float infinity" do
+    infinity = {:float, :infinity}
+    marshal = "\x04\bf\binf"
+
+    assert Marshal.decode(marshal) == {"4.8", infinity}
+  end
+
+  test "Float negative infinity" do
+    neg_infinity = {:float, :neg_infinity}
+    marshal = "\x04\bf\t-inf"
+
+    assert Marshal.decode(marshal) == {"4.8", neg_infinity}
+  end
+
+  test "Float not a number" do
+    nan = {:float, :nan}
+    marshal = "\x04\bf\bnan"
+
+    assert Marshal.decode(marshal) == {"4.8", nan}
+  end
 end

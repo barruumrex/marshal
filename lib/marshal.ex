@@ -162,9 +162,14 @@ defmodule Marshal do
     {number, rest, cache} = decode_string(bitstring, cache)
 
     float =
-      number
-      |> Float.parse()
-      |> elem(0)
+      case number do
+        "inf" -> {:float, :infinity}
+        "-inf" -> {:float, :neg_infinity}
+        "nan" -> {:float, :nan}
+        num -> num
+          |> Float.parse()
+          |> elem(0)
+      end
 
     cache = Cache.add_to_object_cache(float, cache)
     {float, rest, cache}
