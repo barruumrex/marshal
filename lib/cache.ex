@@ -9,7 +9,7 @@ defmodule Cache do
   # Examples
 
       iex> Cache.add_to_symbol_cache(:test, {%{}, %{}})
-      {%{test: 0}, %{}}
+      {%{0 => :test}, %{}}
   """
   def add_to_symbol_cache(symbol, {symbol_cache, object_cache}) do
     {add_to_cache(symbol, symbol_cache), object_cache}
@@ -21,7 +21,7 @@ defmodule Cache do
   # Examples
 
       iex> Cache.add_to_object_cache(%{1 => 2}, {%{}, %{}})
-      {%{}, %{%{1 => 2} => 0}}
+      {%{}, %{0 => %{1 => 2}}}
   """
   def add_to_object_cache(object, {symbol_cache, object_cache}) do
     {symbol_cache, add_to_cache(object, object_cache)}
@@ -32,8 +32,8 @@ defmodule Cache do
 
   # Examples
 
-      iex> Cache.replace_symbol_cache(:test, :test_update, {%{:test => 0}, %{}})
-      {%{:test_update => 0}, %{}}
+      iex> Cache.replace_symbol_cache(:test, :test_update, {%{0 => :test}, %{}})
+      {%{0 => :test_update}, %{}}
   """
   def replace_symbol_cache(old, new, {symbol_cache, object_cache}) do
     symbol_cache = replace_cache(old, new, symbol_cache)
@@ -46,8 +46,8 @@ defmodule Cache do
 
   # Examples
 
-      iex> Cache.replace_object_cache(<<0xFF>>, "test", {%{}, %{<<0>> => 0, <<0xFF>> => 1}})
-      {%{}, %{<<0>> => 0, "test" => 1}}
+      iex> Cache.replace_object_cache(<<0xFF>>, "test", {%{}, %{0 => <<0>>, 1 => <<0xFF>>}})
+      {%{}, %{0 => <<0>>, 1 => "test"}}
   """
   def replace_object_cache(old, new, {symbol_cache, object_cache}) do
     object_cache = replace_cache(old, new, object_cache)
@@ -56,19 +56,17 @@ defmodule Cache do
   end
 
   defp replace_cache(old, new, cache) do
-    ref = cache[old]
+    index = Enum.find_index(cache, fn {_key, val} -> old == val end)
 
-    cache
-    |> Map.delete(old)
-    |> Map.put(new, ref)
+    Map.put(cache, index, new)
   end
 
   # Add to cache if ref isn't already there
   defp add_to_cache(element, cache) do
-    Map.put_new_lazy(cache, element, fn -> get_next_index(cache) end)
+    Map.put_new(cache, get_next_index(cache), element)
   end
 
-  defp get_next_index(cache), do: do_get_next_index(Map.values(cache))
+  defp get_next_index(cache), do: do_get_next_index(Map.keys(cache))
 
   defp do_get_next_index([]), do: 0
   defp do_get_next_index(indices), do: indices |> Enum.max() |> increment()
@@ -80,7 +78,7 @@ defmodule Cache do
 
   # Examples
 
-      iex> Cache.fetch_symbol(1, {%{apple: 0, banana: 1}, %{["test"] => 0, "test" => 1}})
+      iex> Cache.fetch_symbol(1, {%{0 => :apple, 1 => :banana}, %{0 => ["test"], 1 => "test"}})
       :banana
   """
   def fetch_symbol(index, {symbol_cache, _object_cache}) do
@@ -92,7 +90,7 @@ defmodule Cache do
 
   # Examples
 
-      iex> Cache.fetch_object(1, {%{apple: 0, banana: 1}, %{["test"] => 0, "test" => 1}})
+      iex> Cache.fetch_object(1, {%{0 => :apple, 1 => :banana}, %{0 => ["test"], 1 => "test"}})
       "test"
   """
   def fetch_object(index, {_symbol_cache, object_cache}) do
@@ -100,8 +98,6 @@ defmodule Cache do
   end
 
   defp fetch_from_cache(index, cache) do
-    cache
-    |> Enum.find(fn({_, i}) -> i == index end)
-    |> elem(0)
+    Map.get(cache, index)
   end
 end
