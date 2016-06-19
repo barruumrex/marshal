@@ -331,16 +331,17 @@ defmodule Marshal do
   # Decode an object with ivars
   defp decode_ivar(bitstring, cache) do
     # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
 
-    # Get the object
+    # Get the element and cache it
     {element, rest, cache} = decode_element(bitstring, cache)
+    cache = Cache.add_to_object_cache(element, cache)
 
     # Get the vars
     {vars, rest, cache} = get_vars(rest, cache)
 
+    # Add the instance variables and recache
     object = {element, vars}
-    cache = Cache.replace_object_cache(bitstring, object, cache)
+    cache = Cache.replace_object_cache(element, object, cache)
 
     {object, rest, cache}
   end
