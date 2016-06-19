@@ -75,13 +75,13 @@ defmodule Marshal do
 
   # Small integers are called fixnums
   # If the first byte is zero, the number is zero.
-  defp decode_fixnum(<<0, rest::binary>>), do: {0, rest}
+  def decode_fixnum(<<0, rest::binary>>), do: {0, rest}
   # If the first byte is larger than five, it's a whole positive integer
-  defp decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num > 5, do: {num - 5, rest}
+  def decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num > 5, do: {num - 5, rest}
   # If the first byte is less than negative five, it's a whole negative integer
-  defp decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num < -5, do: {num + 5, rest}
+  def decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num < -5, do: {num + 5, rest}
   # Otherwise, the first byte indicates how large the integer is in bytes
-  defp decode_fixnum(<<size::signed-little-integer, rest::binary>>) when abs(size) < 5 do
+  def decode_fixnum(<<size::signed-little-integer, rest::binary>>) when abs(size) < 5 do
     decode_multibyte_fixnum(abs(size), rest)
   end
 
@@ -107,9 +107,6 @@ defmodule Marshal do
   end
 
   defp decode_usrclass(bitstring, cache) do
-    # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
-
     # Name is stored as a symbol
     {name, rest, cache} = decode_element(bitstring, cache)
     # Rest is stored as an element
@@ -117,7 +114,7 @@ defmodule Marshal do
 
     usrclass = {:usrclass, name, data}
 
-    cache = Cache.replace_object_cache(bitstring, usrclass, cache)
+    cache = Cache.replace_last_object(usrclass, cache)
     {usrclass, rest, cache}
   end
 
@@ -138,11 +135,11 @@ defmodule Marshal do
     # Name of the user defined type is stored as a symbol.
     {symbol, rest, cache} = decode_element(bitstring, cache)
 
-    # Fetch the bare binary data. Extracting the data in the responsibility of the type.
-    {size, rest} = decode_fixnum(rest)
-    <<number::binary-size(size), rest::binary>> = rest
-
-    usrdef = {:usrdef, symbol, number}
+    {usrdef, rest, cache} =
+      :UsrDef
+      |> Module.concat(symbol)
+      |> struct(%{bitstream: rest, cache: cache})
+      |> Marshal.UsrDef.decode()
 
     cache = Cache.add_to_object_cache(usrdef, cache)
     {usrdef, rest, cache}
@@ -159,7 +156,7 @@ defmodule Marshal do
 
   defp decode_float(bitstring, cache) do
     # Floats are string representations of floats.
-    {number, rest, cache} = decode_string(bitstring, cache)
+    {number, rest, cache} = do_decode_string(bitstring, cache)
 
     float =
       case number do
@@ -192,6 +189,14 @@ defmodule Marshal do
 
   # Decode string
   defp decode_string(bitstring, cache) do
+    {string, rest, cache} = do_decode_string(bitstring, cache)
+
+    cache = Cache.add_to_object_cache(string, cache)
+
+    {string, rest, cache}
+  end
+
+  defp do_decode_string(bitstring, cache) do
     # Get the number of characters in the string
     {size, rest} = decode_fixnum(bitstring)
 
@@ -285,7 +290,7 @@ defmodule Marshal do
 
   defp decode_class(bitstring, cache) do
     # Class name is stored as a string
-    {name, rest, cache} = decode_string(bitstring, cache)
+    {name, rest, cache} = do_decode_string(bitstring, cache)
     class = {:class, name}
 
     cache = Cache.add_to_object_cache(class, cache)
@@ -295,7 +300,7 @@ defmodule Marshal do
 
   defp decode_module(bitstring, cache) do
     # Module name is stored as a string
-    {name, rest, cache} = decode_string(bitstring, cache)
+    {name, rest, cache} = do_decode_string(bitstring, cache)
     module = {:module, name}
 
     cache = Cache.add_to_object_cache(module, cache)
@@ -305,7 +310,7 @@ defmodule Marshal do
 
   defp decode_symbol(bitstring, cache) do
     # Decode string representation of symbol
-    {symbol, rest, cache} = decode_string(bitstring, cache)
+    {symbol, rest, cache} = do_decode_string(bitstring, cache)
 
     # Convert to an atom and store in the cache
     atom =
@@ -334,14 +339,25 @@ defmodule Marshal do
 
     # Get the element and cache it
     {element, rest, cache} = decode_element(bitstring, cache)
-    cache = Cache.add_to_object_cache(element, cache)
+    {element, cache} =
+      case element do
+        e when is_atom(e) -> {e, cache}
+        {:symbol, _} -> {element, cache}
+        _ -> {element, Cache.replace_last_object(element, cache)}
+      end
 
     # Get the vars
     {vars, rest, cache} = get_vars(rest, cache)
 
     # Add the instance variables and recache
     object = {element, vars}
-    cache = Cache.replace_object_cache(element, object, cache)
+
+    cache =
+      case element do
+        e when is_atom(e) -> Cache.replace_symbol_cache(element, object, cache)
+        {:symbol, _} -> Cache.replace_symbol_cache(element, object, cache)
+        _ -> Cache.replace_object_cache(element, object, cache)
+      end
 
     {object, rest, cache}
   end

@@ -28,6 +28,20 @@ defmodule Cache do
   end
 
   @doc """
+  Replace an symbol stored in the cache. Used for updating a symbol with ivars.
+
+  # Examples
+
+      iex> Cache.replace_symbol_cache(:test, :test_update, {%{:test => 0}, %{}})
+      {%{:test_update => 0}, %{}}
+  """
+  def replace_symbol_cache(old, new, {symbol_cache, object_cache}) do
+    symbol_cache = replace_cache(old, new, symbol_cache)
+
+    {symbol_cache, object_cache}
+  end
+
+  @doc """
   Replace an object stored in the cache. Used for replacing a placeholder with a real value.
 
   # Examples
@@ -36,14 +50,42 @@ defmodule Cache do
       {%{}, %{<<0>> => 0, "test" => 1}}
   """
   def replace_object_cache(old, new, {symbol_cache, object_cache}) do
-    ref = object_cache[old]
-
-    object_cache =
-      object_cache
-      |> Map.delete(old)
-      |> Map.put(new, ref)
+    object_cache = replace_cache(old, new, object_cache)
 
     {symbol_cache, object_cache}
+  end
+
+  defp replace_cache(old, new, cache) do
+    ref = cache[old]
+
+    cache
+    |> Map.delete(old)
+    |> Map.put(new, ref)
+  end
+
+  @doc """
+  Replace the last object stored in the cache.
+
+  # Examples
+
+      iex> Cache.replace_last_object("test", {%{}, %{<<0>> => 0, <<0xFF>> => 1}})
+      {%{}, %{<<0>> => 0, "test" => 1}}
+  """
+  def replace_last_object(new, {symbol_cache, object_cache}) do
+    object_cache = replace_last(new, object_cache)
+
+    {symbol_cache, object_cache}
+  end
+
+
+  defp replace_last(new, cache) do
+    {key, val} =
+      cache
+      |> Enum.max_by(fn {_key, val} -> val end)
+
+    cache
+    |> Map.delete(key)
+    |> Map.put(new, val)
   end
 
   # Add to cache if ref isn't already there

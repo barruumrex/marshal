@@ -56,6 +56,10 @@ defmodule RubyMarshalTest do
     marshal = "\x04\bI:\v\xE7\xB4\x85\xE7\x8E\x89\x06:\x06ET"
     symbol = {{:symbol, "紅玉"}, [E: true]}
     assert Marshal.decode(marshal) == {"4.8", symbol}
+
+    marshal = "\x04\b[\aI:\v\xE7\xB4\x85\xE7\x8E\x89\x06:\x06ET;\x00"
+    symbol = {{:symbol, "紅玉"}, [E: true]}
+    assert Marshal.decode(marshal) == {"4.8", [symbol, symbol]}
   end
 
   test "test_marshal.rb:478" do
