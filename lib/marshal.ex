@@ -18,7 +18,7 @@ defmodule Marshal do
   def decode_element(<<"F", rest::binary>>, cache), do: {false, rest, cache}
   # define TYPE_FIXNUM      'i'
   def decode_element(<<"i", rest::binary>>, cache) do
-    {num, rest} = decode_fixnum(rest)
+    {num, rest} = Marshal.Decode.Helper.decode_fixnum(rest)
     {num, rest, cache}
   end
 
@@ -72,24 +72,6 @@ defmodule Marshal do
   defp missing(type) do
     {{:error, "Type:#{type} is not currently supported"}}
   end
-
-  # Small integers are called fixnums
-  # If the first byte is zero, the number is zero.
-  def decode_fixnum(<<0, rest::binary>>), do: {0, rest}
-  # If the first byte is larger than five, it's a whole positive integer
-  def decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num > 5, do: {num - 5, rest}
-  # If the first byte is less than negative five, it's a whole negative integer
-  def decode_fixnum(<<num::signed-little-integer, rest::binary>>) when num < -5, do: {num + 5, rest}
-  # Otherwise, the first byte indicates how large the integer is in bytes
-  def decode_fixnum(<<size::signed-little-integer, rest::binary>>) when abs(size) < 5 do
-    decode_multibyte_fixnum(abs(size), rest)
-  end
-
-  # Exctract the rest of the integer depending on the byte size
-  defp decode_multibyte_fixnum(4, <<num::signed-little-integer-size(32), rest::binary>>), do: {num, rest}
-  defp decode_multibyte_fixnum(3, <<num::signed-little-integer-size(24), rest::binary>>), do: {num, rest}
-  defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
-  defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
 
   defp decode_extended(bitstring, cache) do
     # Object being extended
@@ -186,7 +168,7 @@ defmodule Marshal do
   defp decode_bignum(<<"-", rest::binary>>, cache), do: do_decode_bignum(rest, cache, -1)
   defp do_decode_bignum(bitstring, cache, sign) do
     # Length of bignum is divided by 2 and stored in a fixnum
-    {half_size, rest} = decode_fixnum(bitstring)
+    {half_size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
     bits = half_size * 2 * 8
 
     <<bignum::native-integer-size(bits), rest::binary>> = rest
@@ -208,7 +190,7 @@ defmodule Marshal do
 
   defp do_decode_string(bitstring, cache) do
     # Get the number of characters in the string
-    {size, rest} = decode_fixnum(bitstring)
+    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
 
     <<string::binary-size(size), rest::binary>> = rest
     {string, rest, cache}
@@ -216,7 +198,7 @@ defmodule Marshal do
 
   defp decode_array(bitstring, cache) do
     # Get the size of the array
-    {size, rest} = decode_fixnum(bitstring)
+    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
 
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(bitstring, cache)
@@ -240,7 +222,7 @@ defmodule Marshal do
 
   defp decode_hash(bitstring, cache) do
     # Get the size of the hash
-    {size, rest} = decode_fixnum(bitstring)
+    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
 
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(bitstring, cache)
@@ -325,7 +307,7 @@ defmodule Marshal do
 
   defp fetch_symbol(bitstring, cache) do
     # Get index of the symbol
-    {index, rest} = decode_fixnum(bitstring)
+    {index, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
 
     symbol = Cache.fetch_symbol(index, cache)
     {symbol, rest, cache}
@@ -359,7 +341,7 @@ defmodule Marshal do
 
   defp fetch_object(bitstring, cache) do
     # Get index of the object
-    {index, rest} = decode_fixnum(bitstring)
+    {index, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
 
     object =
       case index do

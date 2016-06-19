@@ -12,7 +12,7 @@ defimpl Marshal.UsrDef, for: Map do
   def decode(%{bitstream: bits, cache: cache, name: name}) do
 
     # Fetch the bare binary data.
-    {size, rest} = Marshal.decode_fixnum(bits)
+    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bits)
     <<number::binary-size(size), rest::binary>> = rest
 
     usrdef = {:usrdef, name, number}
