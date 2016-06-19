@@ -92,9 +92,6 @@ defmodule Marshal do
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
 
   defp decode_extended(bitstring, cache) do
-    # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
-
     # Object being extended
     {name, rest, cache} = decode_element(bitstring, cache)
     # Object data
@@ -102,7 +99,7 @@ defmodule Marshal do
 
     extended = {:extended, name, object}
 
-    cache = Cache.replace_object_cache(bitstring, extended, cache)
+    cache = Cache.replace_object_cache(object, extended, cache)
     {extended, rest, cache}
   end
 
@@ -114,20 +111,22 @@ defmodule Marshal do
 
     usrclass = {:usrclass, name, data}
 
-    cache = Cache.replace_last_object(usrclass, cache)
+    cache = Cache.replace_object_cache(data, usrclass, cache)
     {usrclass, rest, cache}
   end
 
   defp decode_object_instance(bitstring, cache) do
-    # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
-
     # Name is stored as a symbol.
     {name, rest, cache} = decode_element(bitstring, cache)
+
+    # Add placeholder to cache
+    cache = Cache.add_to_object_cache(name, cache)
+
     {vars, rest, cache} = get_vars(rest, cache)
     object = {:object_instance, name, vars}
 
-    cache = Cache.replace_object_cache(bitstring, object, cache)
+    cache = Cache.replace_object_cache(name, object, cache)
+
     {object, rest, cache}
   end
 
@@ -254,37 +253,26 @@ defmodule Marshal do
   end
 
   defp decode_hashdef(bitstring, cache) do
-    # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
-
-    # Get size of hash
-    {size, rest} = decode_fixnum(bitstring)
-
     # Get hash values
-    {hash, rest, cache} = do_decode_hash(rest, size, %{}, cache)
+    {hash, rest, cache} = decode_hash(bitstring, cache)
 
     # Get default value
     {default, rest, cache} = decode_element(rest, cache)
 
     default_hash = {:default_hash, hash, default}
 
-    cache = Cache.replace_object_cache(bitstring, default_hash, cache)
+    cache = Cache.replace_object_cache(hash, default_hash, cache)
     {default_hash, rest, cache}
   end
 
   defp decode_struct(bitstring, cache) do
-    # Reserve cache
-    cache = Cache.add_to_object_cache(bitstring, cache)
-
     {name, rest, cache} = decode_element(bitstring, cache)
-    {size, rest} = decode_fixnum(rest)
 
-    # Decode array
-    {values, rest, cache} = do_decode_hash(rest, size, %{}, cache)
+    {values, rest, cache} = decode_hash(rest, cache)
 
     struct_data = {:struct, name, values}
     # Replace placeholder with real object
-    cache = Cache.replace_object_cache(bitstring, struct_data, cache)
+    cache = Cache.replace_object_cache(values, struct_data, cache)
     {struct_data, rest, cache}
   end
 
@@ -335,16 +323,8 @@ defmodule Marshal do
 
   # Decode an object with ivars
   defp decode_ivar(bitstring, cache) do
-    # Reserve cache
-
-    # Get the element and cache it
+    # Get the element
     {element, rest, cache} = decode_element(bitstring, cache)
-    {element, cache} =
-      case element do
-        e when is_atom(e) -> {e, cache}
-        {:symbol, _} -> {element, cache}
-        _ -> {element, Cache.replace_last_object(element, cache)}
-      end
 
     # Get the vars
     {vars, rest, cache} = get_vars(rest, cache)

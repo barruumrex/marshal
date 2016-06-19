@@ -277,4 +277,49 @@ defmodule MarshalTest do
 
     assert Marshal.decode(marshal) == {"4.8", [time_with_ivar, apple, tz, time_with_ivar]}
   end
+
+  test "extended object cache" do
+    banana = {"banana", [E: true]}
+    object = {:extended, :Mod2, {:extended, :Mod1, {:object_instance, :Object, ["@z": banana]}}}
+    marshal = "\x04\b[\be:\tMod2e:\tMod1o:\vObject\x06:\a@zI\"\vbanana\x06:\x06ET@\a@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [object, banana, object]}
+  end
+
+  test "usr class nested cache" do
+    banana = {"banana", [E: true]}
+    cherry = {"cherry", [E: true]}
+    usrclass = {{:usrclass, :StrClone, "banana"}, [E: true, "@z": cherry]}
+    marshal = "\x04\b[\tIC:\rStrClone\"\vbanana\a:\x06ET:\a@zI\"\vcherry\x06;\x06TI\"\vbanana\x06;\x06T@\a@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [usrclass, banana, cherry, usrclass]}
+  end
+
+  test "hashdef nested cache" do
+    banana = {"banana", [E: true]}
+    cherry = {"cherry", [E: true]}
+    hashdef = {{:default_hash, %{{"test", [E: true]} => cherry}, banana}, ["@z": cherry]}
+    marshal = "\x04\b[\tI}\x06I\"\ttest\x06:\x06ETI\"\vcherry\x06;\x00TI\"\vbanana\x06;\x00T\x06:\a@z@\b@\t@\b@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [hashdef, banana, cherry, hashdef]}
+  end
+
+  test "struct nested cache" do
+    banana = {"banana", [E: true]}
+    cherry = {"cherry", [E: true]}
+    struct = {:struct, :"Struct::MyStruct", %{a: banana, b: cherry}}
+    marshal = "\x04\b[\tS:\x15Struct::MyStruct\a:\x06aI\"\vbanana\x06:\x06ET:\x06bI\"\vcherry\x06;\aT@\a@\b@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [struct, banana, cherry, struct]}
+  end
+
+  test "defined struct nest cache" do
+    banana = {"banana", [E: true]}
+    cherry = {"cherry", [E: true]}
+    grape = {"grape", [E: true]}
+    def_struct = {{:struct, :MySubStruct, %{a: banana, b: cherry}}, ["@v": grape]}
+    marshal = "\x04\b[\nIS:\x10MySubStruct\a:\x06aI\"\vbanana\x06:\x06ET:\x06bI\"\vcherry\x06;\aT\x06:\a@vI\"\ngrape\x06;\aT@\a@\b@\t@\x06"
+
+    assert Marshal.decode(marshal) == {"4.8", [def_struct, banana, cherry, grape, def_struct]}
+  end
 end

@@ -63,31 +63,6 @@ defmodule Cache do
     |> Map.put(new, ref)
   end
 
-  @doc """
-  Replace the last object stored in the cache.
-
-  # Examples
-
-      iex> Cache.replace_last_object("test", {%{}, %{<<0>> => 0, <<0xFF>> => 1}})
-      {%{}, %{<<0>> => 0, "test" => 1}}
-  """
-  def replace_last_object(new, {symbol_cache, object_cache}) do
-    object_cache = replace_last(new, object_cache)
-
-    {symbol_cache, object_cache}
-  end
-
-
-  defp replace_last(new, cache) do
-    {key, val} =
-      cache
-      |> Enum.max_by(fn {_key, val} -> val end)
-
-    cache
-    |> Map.delete(key)
-    |> Map.put(new, val)
-  end
-
   # Add to cache if ref isn't already there
   defp add_to_cache(element, cache) do
     Map.put_new_lazy(cache, element, fn -> get_next_index(cache) end)
