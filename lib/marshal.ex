@@ -11,63 +11,63 @@ defmodule Marshal do
   end
 
   # define TYPE_NIL         '0'
-  defp decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
+  def decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
   # define TYPE_TRUE        'T'
-  defp decode_element(<<"T", rest::binary>>, cache), do: {true, rest, cache}
+  def decode_element(<<"T", rest::binary>>, cache), do: {true, rest, cache}
   # define TYPE_FALSE       'F'
-  defp decode_element(<<"F", rest::binary>>, cache), do: {false, rest, cache}
+  def decode_element(<<"F", rest::binary>>, cache), do: {false, rest, cache}
   # define TYPE_FIXNUM      'i'
-  defp decode_element(<<"i", rest::binary>>, cache) do
+  def decode_element(<<"i", rest::binary>>, cache) do
     {num, rest} = decode_fixnum(rest)
     {num, rest, cache}
   end
 
   # define TYPE_EXTENDED    'e'
-  defp decode_element(<<"e", rest::binary>>, cache), do: decode_extended(rest, cache)
+  def decode_element(<<"e", rest::binary>>, cache), do: decode_extended(rest, cache)
   # define TYPE_UCLASS      'C'
-  defp decode_element(<<"C", rest::binary>>, cache), do: decode_usrclass(rest, cache)
+  def decode_element(<<"C", rest::binary>>, cache), do: decode_usrclass(rest, cache)
   # define TYPE_OBJECT      'o'
-  defp decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
+  def decode_element(<<"o", rest::binary>>, cache), do: decode_object_instance(rest, cache)
   # define TYPE_DATA        'd'
-  defp decode_element(<<"d", _rest::binary>>, _cache), do: missing("DATA")
+  def decode_element(<<"d", _rest::binary>>, _cache), do: missing("DATA")
   # define TYPE_USERDEF     'u'
-  defp decode_element(<<"u", rest::binary>>, cache), do: decode_usrdef(rest, cache)
+  def decode_element(<<"u", rest::binary>>, cache), do: decode_usrdef(rest, cache)
   # define TYPE_USRMARSHAL  'U'
-  defp decode_element(<<"U", rest::binary>>, cache), do: decode_usrmarshal(rest, cache)
+  def decode_element(<<"U", rest::binary>>, cache), do: decode_usrmarshal(rest, cache)
   # define TYPE_FLOAT       'f'
-  defp decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
+  def decode_element(<<"f", rest::binary>>, cache), do: decode_float(rest, cache)
   # define TYPE_BIGNUM      'l'
-  defp decode_element(<<"l", rest::binary>>, cache), do: decode_bignum(rest, cache)
+  def decode_element(<<"l", rest::binary>>, cache), do: decode_bignum(rest, cache)
   # define TYPE_STRING      '"'
-  defp decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
+  def decode_element(<<"\"", rest::binary>>, cache), do: decode_string(rest, cache)
   # define TYPE_REGEXP      '/'
-  defp decode_element(<<"/", _rest::binary>>, _cache), do: missing("REGEXP")
+  def decode_element(<<"/", _rest::binary>>, _cache), do: missing("REGEXP")
   # define TYPE_ARRAY       '['
-  defp decode_element(<<"[", rest::binary>>, cache), do: decode_array(rest, cache)
+  def decode_element(<<"[", rest::binary>>, cache), do: decode_array(rest, cache)
   # define TYPE_HASH        '{'
-  defp decode_element(<<"{", rest::binary>>, cache), do: decode_hash(rest, cache)
+  def decode_element(<<"{", rest::binary>>, cache), do: decode_hash(rest, cache)
   # define TYPE_HASH_DEF    '}'
-  defp decode_element(<<"}", rest::binary>>, cache), do: decode_hashdef(rest, cache)
+  def decode_element(<<"}", rest::binary>>, cache), do: decode_hashdef(rest, cache)
   # define TYPE_STRUCT      'S'
-  defp decode_element(<<"S", rest::binary>>, cache), do: decode_struct(rest, cache)
+  def decode_element(<<"S", rest::binary>>, cache), do: decode_struct(rest, cache)
   # define TYPE_MODULE_OLD  'M'
-  defp decode_element(<<"M", _rest::binary>>, _cache), do: missing("MODULE_OLD")
+  def decode_element(<<"M", _rest::binary>>, _cache), do: missing("MODULE_OLD")
   # define TYPE_CLASS       'c'
-  defp decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
+  def decode_element(<<"c", rest::binary>>, cache), do: decode_class(rest, cache)
   # define TYPE_MODULE      'm'
-  defp decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
+  def decode_element(<<"m", rest::binary>>, cache), do: decode_module(rest, cache)
 
   # define TYPE_SYMBOL      ':'
-  defp decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
+  def decode_element(<<":", rest::binary>>, cache), do: decode_symbol(rest, cache)
   # define TYPE_SYMLINK     ';'
-  defp decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
+  def decode_element(<<";", rest::binary>>, cache), do: fetch_symbol(rest, cache)
 
   # define TYPE_IVAR        'I'
-  defp decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
+  def decode_element(<<"I", rest::binary>>, cache), do: decode_ivar(rest, cache)
   # define TYPE_LINK        '@'
-  defp decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
+  def decode_element(<<"@", rest::binary>>, cache), do: fetch_object(rest, cache)
 
-  defp decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
+  def decode_element(<<unknown::binary-size(1), _rest::binary>>, _cache), do: {:error, "Unknown Type: #{unknown}"}
 
   defp missing(type) do
     {{:error, "Type:#{type} is not currently supported"}}
@@ -350,7 +350,11 @@ defmodule Marshal do
     {vars, rest, cache} = get_vars(rest, cache)
 
     # Add the instance variables and recache
-    object = {element, vars}
+    object =
+      case vars do
+        [] -> element
+        _ -> {element, vars}
+      end
 
     cache =
       case element do
