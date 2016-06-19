@@ -122,7 +122,7 @@ defmodule Marshal do
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(name, cache)
 
-    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(rest, cache)
     object = {:object_instance, name, vars}
 
     cache = Cache.replace_object_cache(name, object, cache)
@@ -338,7 +338,7 @@ defmodule Marshal do
     {element, rest, cache} = decode_element(bitstring, cache)
 
     # Get the vars
-    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(rest, cache)
 
     # Add the instance variables and recache
     object =

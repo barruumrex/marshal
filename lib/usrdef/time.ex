@@ -13,7 +13,7 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
     usrdef = {:usrdef, :Time, number}
 
     # Manually get_vars
-    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(rest, cache)
 
     # Add 0 to the front of the remainder to prevent ivars from breaking
     rest = <<0>> <> rest

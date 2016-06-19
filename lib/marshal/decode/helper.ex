@@ -1,4 +1,4 @@
-defmodule Marshal.Helpers do
+defmodule Marshal.Decode.Helper do
   @moduledoc """
   Helper functions for pulling apart Marshal binary
   """
@@ -8,7 +8,7 @@ defmodule Marshal.Helpers do
 
   # Examples
 
-      iex> Marshal.Helpers.get_vars("\a:\x06ET:\a@zi\x06", {%{}, %{}})
+      iex> Marshal.Decode.Helper.get_vars("\a:\x06ET:\a@zi\x06", {%{}, %{}})
       {[E: true, "@z": 1], "", {%{0 => :E, 1 => :"@z"}, %{}}}
   """
   def get_vars(bitstring, cache) do
