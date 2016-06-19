@@ -13,7 +13,7 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
     usrdef = {:usrdef, :Time, number}
 
     # Manually get_vars
-    {vars, rest, cache} = get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
 
     # Add 0 to the front of the remainder to prevent ivars from breaking
     rest = <<0>> <> rest
@@ -21,21 +21,4 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
     {{usrdef, vars}, rest, cache}
   end
 
-  # Recursively fetch ivars
-  defp get_vars(bitstring, cache) do
-    #Get the number of vars
-    {size, rest} = Marshal.decode_fixnum(bitstring)
-
-    do_get_ivars(rest, size, [], cache)
-  end
-
-  defp do_get_ivars(rest, 0, acc, cache), do: {acc |> Enum.reverse(), rest, cache}
-  defp do_get_ivars(bitstring, size, acc, cache) do
-    # Get var symbol
-    {symbol, rest, cache} = Marshal.decode_element(bitstring, cache)
-    # Get var value
-    {value, rest, cache} = Marshal.decode_element(rest, cache)
-
-    do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
-  end
 end

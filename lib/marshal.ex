@@ -122,7 +122,7 @@ defmodule Marshal do
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(name, cache)
 
-    {vars, rest, cache} = get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
     object = {:object_instance, name, vars}
 
     cache = Cache.replace_object_cache(name, object, cache)
@@ -338,7 +338,7 @@ defmodule Marshal do
     {element, rest, cache} = decode_element(bitstring, cache)
 
     # Get the vars
-    {vars, rest, cache} = get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Helpers.get_vars(rest, cache)
 
     # Add the instance variables and recache
     object =
@@ -355,24 +355,6 @@ defmodule Marshal do
       end
 
     {object, rest, cache}
-  end
-
-  # Recursively fetch ivars
-  defp get_vars(bitstring, cache) do
-    #Get the number of vars
-    {size, rest} = decode_fixnum(bitstring)
-
-    do_get_ivars(rest, size, [], cache)
-  end
-
-  defp do_get_ivars(rest, 0, acc, cache), do: {acc |> Enum.reverse(), rest, cache}
-  defp do_get_ivars(bitstring, size, acc, cache) do
-    # Get var symbol
-    {symbol, rest, cache} = decode_element(bitstring, cache)
-    # Get var value
-    {value, rest, cache} = decode_element(rest, cache)
-
-    do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
   end
 
   defp fetch_object(bitstring, cache) do
