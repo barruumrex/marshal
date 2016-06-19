@@ -134,14 +134,25 @@ defmodule Marshal do
     # Name of the user defined type is stored as a symbol.
     {symbol, rest, cache} = decode_element(bitstring, cache)
 
+    # Decode the usrdef data.
     {usrdef, rest, cache} =
-      :UsrDef
-      |> Module.concat(symbol)
-      |> struct(%{bitstream: rest, cache: cache})
+      symbol
+      |> maybe_struct(%{bitstream: rest, cache: cache})
       |> Marshal.UsrDef.decode()
 
     cache = Cache.add_to_object_cache(usrdef, cache)
     {usrdef, rest, cache}
+  end
+
+  # Attempt to create a struct from the symbol. Default to a bare map with a name.
+  defp maybe_struct(name, init) do
+      try do
+        :UsrDef
+        |> Module.concat(name)
+        |> struct(init)
+      rescue
+        UndefinedFunctionError -> Map.merge(init, %{name: name})
+      end
   end
 
   defp decode_usrmarshal(bitstring, cache) do

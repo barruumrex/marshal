@@ -12,9 +12,13 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
 
     usrdef = {:usrdef, :Time, number}
 
+    # Manually get_vars
     {vars, rest, cache} = get_vars(rest, cache)
 
-    {{usrdef, vars}, <<0>> <> rest, cache}
+    # Add 0 to the front of the remainder to prevent ivars from breaking
+    rest = <<0>> <> rest
+
+    {{usrdef, vars}, rest, cache}
   end
 
   # Recursively fetch ivars
