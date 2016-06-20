@@ -34,6 +34,14 @@ defmodule Marshal.Decode.Helper do
   defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
 
+  def decode_string(bitstring, cache) do
+    # Get the number of characters in the string
+    {size, rest} = decode_fixnum(bitstring)
+
+    <<string::binary-size(size), rest::binary>> = rest
+    {string, rest, cache}
+  end
+
   @doc """
   Retrieve key-value pairs of variables from Marshal binary.
 
