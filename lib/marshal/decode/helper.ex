@@ -43,19 +43,30 @@ defmodule Marshal.Decode.Helper do
       {[E: true, "@z": 1], "", {%{0 => :E, 1 => :"@z"}, %{}}}
   """
   def get_vars(bitstring, cache) do
-    #Get the number of vars
-    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
-
-    do_get_ivars(rest, size, [], cache)
+    decode_list(bitstring, cache, &get_keyval/1)
   end
 
-  defp do_get_ivars(rest, 0, acc, cache), do: {acc |> Enum.reverse(), rest, cache}
-  defp do_get_ivars(bitstring, size, acc, cache) do
+  defp decode_list(bitstring, cache, decoder) do
+    #Get the number of vars
+    {size, rest} = decode_fixnum(bitstring)
+
+    {list, rest, cache} =
+      {rest, cache}
+      |> Stream.unfold(decoder)
+      |> Stream.take(size)
+      |> Enum.reduce({[], rest, cache}, &collect_vars/2)
+
+    {Enum.reverse(list), rest, cache}
+  end
+
+  defp collect_vars({var, rest, cache}, {acc, _, _}), do: {[var | acc], rest, cache}
+
+  def get_keyval({"", _cache}), do: nil
+  def get_keyval({bitstring, cache}) do
     # Get var symbol
     {symbol, rest, cache} = Marshal.decode_element(bitstring, cache)
     # Get var value
     {value, rest, cache} = Marshal.decode_element(rest, cache)
-
-    do_get_ivars(rest, size - 1, [{symbol, value} | acc], cache)
+    {{{symbol, value}, rest, cache}, {rest, cache}}
   end
 end

@@ -221,28 +221,16 @@ defmodule Marshal do
   end
 
   defp decode_hash(bitstring, cache) do
-    # Get the size of the hash
-    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
-
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(bitstring, cache)
 
-    # Decode hash
-    {hash, rest, cache} = do_decode_hash(rest, size, %{}, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(bitstring, cache)
+    hash = Map.new(vars)
 
     # Replace placeholder with real object
     cache = Cache.replace_object_cache(bitstring, hash, cache)
 
     {hash, rest, cache}
-  end
-
-  # Recursively extract elements from the hash until you've reached the end.
-  defp do_decode_hash(rest, 0, acc, cache), do: {acc, rest, cache}
-  defp do_decode_hash(rest, size, acc, cache) do
-    {key, rest, cache} = decode_element(rest, cache)
-    {value, rest, cache} = decode_element(rest, cache)
-
-    do_decode_hash(rest, size - 1, Map.put(acc, key, value), cache)
   end
 
   defp decode_hashdef(bitstring, cache) do
