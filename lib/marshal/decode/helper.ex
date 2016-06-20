@@ -34,12 +34,20 @@ defmodule Marshal.Decode.Helper do
   defp decode_multibyte_fixnum(2, <<num::signed-little-integer-size(16), rest::binary>>), do: {num, rest}
   defp decode_multibyte_fixnum(1, <<num::signed-little-integer-size(8), rest::binary>>), do: {num, rest}
 
-  def decode_string(bitstring, cache) do
+  @doc """
+  Retrieve string binary representation from Marshal binary.
+
+  # Examples
+
+      iex> Marshal.Decode.Helper.decode_string("\ttest")
+      {"test", ""}
+  """
+  def decode_string(bitstring) do
     # Get the number of characters in the string
     {size, rest} = decode_fixnum(bitstring)
 
     <<string::binary-size(size), rest::binary>> = rest
-    {string, rest, cache}
+    {string, rest}
   end
 
   @doc """

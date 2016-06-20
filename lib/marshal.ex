@@ -148,7 +148,7 @@ defmodule Marshal do
 
   defp decode_float(bitstring, cache) do
     # Floats are string representations of floats.
-    {number, rest, cache} = Marshal.Decode.Helper.decode_string(bitstring, cache)
+    {number, rest} = Marshal.Decode.Helper.decode_string(bitstring)
 
     float =
       case number do
@@ -181,7 +181,7 @@ defmodule Marshal do
 
   # Decode string
   defp decode_string(bitstring, cache) do
-    {string, rest, cache} = Marshal.Decode.Helper.decode_string(bitstring, cache)
+    {string, rest} = Marshal.Decode.Helper.decode_string(bitstring)
 
     cache = Cache.add_to_object_cache(string, cache)
 
@@ -239,7 +239,7 @@ defmodule Marshal do
 
   defp decode_class(bitstring, cache) do
     # Class name is stored as a string
-    {name, rest, cache} = Marshal.Decode.Helper.decode_string(bitstring, cache)
+    {name, rest} = Marshal.Decode.Helper.decode_string(bitstring)
     class = {:class, name}
 
     cache = Cache.add_to_object_cache(class, cache)
@@ -249,7 +249,7 @@ defmodule Marshal do
 
   defp decode_module(bitstring, cache) do
     # Module name is stored as a string
-    {name, rest, cache} = Marshal.Decode.Helper.decode_string(bitstring, cache)
+    {name, rest} = Marshal.Decode.Helper.decode_string(bitstring)
     module = {:module, name}
 
     cache = Cache.add_to_object_cache(module, cache)
@@ -259,7 +259,7 @@ defmodule Marshal do
 
   defp decode_symbol(bitstring, cache) do
     # Decode string representation of symbol
-    {symbol, rest, cache} = Marshal.Decode.Helper.decode_string(bitstring, cache)
+    {symbol, rest} = Marshal.Decode.Helper.decode_string(bitstring)
 
     # Convert to an atom and store in the cache
     atom =
