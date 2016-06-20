@@ -197,27 +197,15 @@ defmodule Marshal do
   end
 
   defp decode_array(bitstring, cache) do
-    # Get the size of the array
-    {size, rest} = Marshal.Decode.Helper.decode_fixnum(bitstring)
-
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(bitstring, cache)
 
-    # Decode array
-    {array, rest, cache} = do_decode_array(rest, size, [], cache)
+    {array, rest, cache} = Marshal.Decode.Helper.get_vars(bitstring, cache)
 
     # Replace placeholder with real object
     cache = Cache.replace_object_cache(bitstring, array, cache)
 
     {array, rest, cache}
-  end
-
-  # Recursively extract elements from the array until you've reached the end.
-  defp do_decode_array(rest, 0, acc, cache), do: {Enum.reverse(acc), rest, cache}
-  defp do_decode_array(rest, size, acc, cache) do
-    {element, rest, cache} = decode_element(rest, cache)
-
-    do_decode_array(rest, size - 1, [element | acc], cache)
   end
 
   defp decode_hash(bitstring, cache) do

@@ -46,6 +46,10 @@ defmodule Marshal.Decode.Helper do
     decode_list(bitstring, cache, &get_keyval/1)
   end
 
+  def get_vars(bitstring, cache) do
+    decode_list(bitstring, cache, &get_val/1)
+  end
+
   defp decode_list(bitstring, cache, decoder) do
     #Get the number of vars
     {size, rest} = decode_fixnum(bitstring)
@@ -68,5 +72,12 @@ defmodule Marshal.Decode.Helper do
     # Get var value
     {value, rest, cache} = Marshal.decode_element(rest, cache)
     {{{symbol, value}, rest, cache}, {rest, cache}}
+  end
+
+  def get_val({"", _cache}), do: nil
+  def get_val({bitstring, cache}) do
+    # Get value
+    {value, rest, cache} = Marshal.decode_element(bitstring, cache)
+    {{value, rest, cache}, {rest, cache}}
   end
 end
