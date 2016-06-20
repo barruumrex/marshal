@@ -89,8 +89,8 @@ defmodule Marshal.Decode.Helper do
 
   defp collect_vars({var, rest, cache}, {acc, _, _}), do: {[var | acc], rest, cache}
 
-  def get_keyval({"", _cache}), do: nil
-  def get_keyval({bitstring, cache}) do
+  defp get_keyval({"", _cache}), do: nil
+  defp get_keyval({bitstring, cache}) do
     # Get var symbol
     {symbol, rest, cache} = Marshal.decode_element(bitstring, cache)
     # Get var value
@@ -98,8 +98,8 @@ defmodule Marshal.Decode.Helper do
     {{{symbol, value}, rest, cache}, {rest, cache}}
   end
 
-  def get_val({"", _cache}), do: nil
-  def get_val({bitstring, cache}) do
+  defp get_val({"", _cache}), do: nil
+  defp get_val({bitstring, cache}) do
     # Get value
     {value, rest, cache} = Marshal.decode_element(bitstring, cache)
     {{value, rest, cache}, {rest, cache}}
