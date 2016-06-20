@@ -62,6 +62,14 @@ defmodule Marshal.Decode.Helper do
     decode_list(bitstring, cache, &get_keyval/1)
   end
 
+  @doc """
+  Retrieve variable list from Marshal binary.
+
+  # Examples
+
+      iex> Marshal.Decode.Helper.get_vars("\t:\x06ET:\a@zi\x06", {%{}, %{}})
+      {[:E, true, :"@z", 1], "", {%{0 => :E, 1 => :"@z"}, %{}}}
+  """
   def get_vars(bitstring, cache) do
     decode_list(bitstring, cache, &get_val/1)
   end
