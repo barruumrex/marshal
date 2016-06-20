@@ -104,7 +104,7 @@ defmodule Marshal do
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(name, cache)
 
-    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_tuples(rest, cache)
     object = {:object_instance, name, vars}
 
     cache = Cache.replace_object_cache(name, object, cache)
@@ -224,7 +224,7 @@ defmodule Marshal do
     # Add placeholder to cache
     cache = Cache.add_to_object_cache(bitstring, cache)
 
-    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(bitstring, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_tuples(bitstring, cache)
     hash = Map.new(vars)
 
     # Replace placeholder with real object
@@ -308,7 +308,7 @@ defmodule Marshal do
     {element, rest, cache} = decode_element(bitstring, cache)
 
     # Get the vars
-    {vars, rest, cache} = Marshal.Decode.Helper.get_vars(rest, cache)
+    {vars, rest, cache} = Marshal.Decode.Helper.get_tuples(rest, cache)
 
     # Add the instance variables and recache
     object =

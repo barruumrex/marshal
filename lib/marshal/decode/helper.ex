@@ -39,10 +39,10 @@ defmodule Marshal.Decode.Helper do
 
   # Examples
 
-      iex> Marshal.Decode.Helper.get_vars("\a:\x06ET:\a@zi\x06", {%{}, %{}})
+      iex> Marshal.Decode.Helper.get_tuples("\a:\x06ET:\a@zi\x06", {%{}, %{}})
       {[E: true, "@z": 1], "", {%{0 => :E, 1 => :"@z"}, %{}}}
   """
-  def get_vars(bitstring, cache) do
+  def get_tuples(bitstring, cache) do
     decode_list(bitstring, cache, &get_keyval/1)
   end
 
