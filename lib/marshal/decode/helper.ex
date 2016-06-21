@@ -82,12 +82,16 @@ defmodule Marshal.Decode.Helper do
       {rest, cache}
       |> Stream.unfold(decoder)
       |> Stream.take(size)
-      |> Enum.reduce({[], rest, cache}, &collect_vars/2)
+      |> collect_list(rest, cache)
 
     {Enum.reverse(list), rest, cache}
   end
 
-  defp collect_vars({var, rest, cache}, {acc, _, _}), do: {[var | acc], rest, cache}
+  defp collect_list(bitstream, init_bits, cache) do
+    bitstream
+    |> Enum.reduce({[], init_bits, cache}, &combine_elements/2)
+  end
+  defp combine_elements({element, bits, cache}, {acc, _, _}), do: {[element | acc], bits, cache}
 
   defp get_keyval({"", _cache}), do: nil
   defp get_keyval({bitstring, cache}) do
