@@ -159,7 +159,7 @@ defmodule MarshalTest do
 
   test "Decode u type" do
     time_marshal = "\x04\bIu:\tTime\r\xD4\x15\x1D\x80\xCB\xA4\xA8\x9D\a:\voffseti\xFE\xC0\xC7:\tzoneI\"\bEDT\x06:\x06EF"
-    time = {{:usrdef, :Time, {~D[2016-06-14], ~T[20:39:26.566475]}}, [offset: -14400, zone: {"EDT", [E: false]}]}
+    time = {{:usrdef, :Time, ~N[2016-06-14 20:39:26.566475]}, [offset: -14400, zone: {"EDT", [E: false]}]}
     assert Marshal.decode(time_marshal) == {"4.8", time}
   end
 
@@ -270,7 +270,7 @@ defmodule MarshalTest do
   test "ivar order is different for user defined object" do
     apple = {"apple", [E: true]}
     tz = {"EDT", [E: false]}
-    time_with_ivar = {{:usrdef, :Time, {~D[2016-06-18], ~T[21:34:58.994154]}},
+    time_with_ivar = {{:usrdef, :Time, ~N[2016-06-18 21:34:58.994154]},
                       ["@remove": apple, offset: -14400, zone: tz]}
 
     marshal = "\x04\b[\tIu:\tTime\rU\x16\x1D\x80j+\xAF\x8B\b:\f@removeI\"\napple\x06:\x06ET:\voffseti\xFE\xC0\xC7:\tzoneI\"\bEDT\x06;\aF@\x06@\a@\b"

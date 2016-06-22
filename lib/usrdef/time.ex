@@ -33,9 +33,8 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
     year = year + 1900
     month = month + 1
 
-    {:ok, date} = Date.new(year, month, day)
-    {:ok, time} = Time.new(hour, min, sec, usec)
-    {date, time}
+    {:ok, datetime} = NaiveDateTime.new(year, month, day, hour, min, sec, usec)
+    datetime
   end
 
 end
