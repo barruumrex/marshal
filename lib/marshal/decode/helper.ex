@@ -78,34 +78,27 @@ defmodule Marshal.Decode.Helper do
     #Get the number of vars
     {size, rest} = decode_fixnum(bitstring)
 
-    {list, rest, cache} =
-      {rest, cache}
-      |> Stream.unfold(decoder)
-      |> Stream.take(size)
-      |> collect_list(rest, cache)
-
-    {Enum.reverse(list), rest, cache}
+    do_decode_list(rest, cache, decoder, size, [])
   end
 
-  defp collect_list(bitstream, init_bits, cache) do
-    bitstream
-    |> Enum.reduce({[], init_bits, cache}, &combine_elements/2)
-  end
-  defp combine_elements({element, bits, cache}, {acc, _, _}), do: {[element | acc], bits, cache}
+  defp do_decode_list(bitstring, cache, _decoder, 0, acc), do: {Enum.reverse(acc), bitstring, cache}
+  defp do_decode_list(bitstring, cache, decoder, size, acc) do
+    {object, rest, cache} = decoder.({bitstring, cache})
 
-  defp get_keyval({"", _cache}), do: nil
+    do_decode_list(rest, cache, decoder, size - 1, [object | acc])
+  end
+
   defp get_keyval({bitstring, cache}) do
     # Get var symbol
     {symbol, rest, cache} = Marshal.decode_element(bitstring, cache)
     # Get var value
     {value, rest, cache} = Marshal.decode_element(rest, cache)
-    {{{symbol, value}, rest, cache}, {rest, cache}}
+    {{symbol, value}, rest, cache}
   end
 
   defp get_val({"", _cache}), do: nil
   defp get_val({bitstring, cache}) do
     # Get value
-    {value, rest, cache} = Marshal.decode_element(bitstring, cache)
-    {{value, rest, cache}, {rest, cache}}
+    Marshal.decode_element(bitstring, cache)
   end
 end
