@@ -4,7 +4,7 @@ defmodule Marshal.Mixfile do
   def project do
     [app: :marshal,
      version: "0.0.1",
-     elixir: "~> 1.3-rc",
+     elixir: "~> 1.3.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps]
