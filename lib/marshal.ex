@@ -13,6 +13,9 @@ defmodule Marshal do
     {:error, "Version #{major}.#{minor} is not supported. This module only supports version 4.8"}
   end
 
+  @doc """
+  Decode an individual element from a Marshal object. The first byte is always a character indicating the type.
+  """
   # define TYPE_NIL         '0'
   def decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}
   # define TYPE_TRUE        'T'
