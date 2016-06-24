@@ -1,6 +1,6 @@
 # Marshal
 
-**TODO: Add description**
+Parser for Ruby Marshal format version 4.8
 
 ## Installation
 
@@ -10,15 +10,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
     ```elixir
     def deps do
-      [{:marshal, "~> 0.0.1"}]
-    end
-    ```
-
-  2. Ensure `marshal` is started before your application:
-
-    ```elixir
-    def application do
-      [applications: [:marshal]]
+      [{:marshal, "~> 0.9.0"}]
     end
     ```
 
