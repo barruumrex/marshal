@@ -6,8 +6,8 @@ defmodule Marshal do
   @doc """
   Decode a complete Marshal object. The first two bytes are always the Marshal version.
   """
-  def decode(<<major::size(8), minor::size(8), rest::binary>>) do
-    {"#{major}.#{minor}", rest |> decode_element({%{}, %{}}) |> elem(0)}
+  def decode(<<4::size(8), 8::size(8), rest::binary>>) do
+    rest |> decode_element({%{}, %{}}) |> elem(0)
   end
 
   # define TYPE_NIL         '0'

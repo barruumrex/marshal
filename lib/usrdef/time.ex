@@ -29,7 +29,7 @@ defimpl Marshal.UsrDef, for: UsrDef.Time do
 
   defp fix_order(<<p4, p3, p2, p1, s4, s3, s2, s1>>), do: <<p1, p2, p3, p4, s1, s2, s3, s4>>
 
-  defp unpack(<<1::1, utc_p::1, year::16, month::4, day::5, hour::5, min::6, sec::6, usec::20>>) do
+  defp unpack(<<1::1, _utc_p::1, year::16, month::4, day::5, hour::5, min::6, sec::6, usec::20>>) do
     year = year + 1900
     month = month + 1
 
