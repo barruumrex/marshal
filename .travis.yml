@@ -4,7 +4,7 @@ notifications:
   recipients:
     - barruumrex@gmail.com
 otp_release:
-  - 19.0
+  - 18.3
 script: "MIX_ENV=test mix local.hex --force && MIX_ENV=test mix do deps.get, test"
 after_script:
   - MIX_ENV=docs mix deps.get
