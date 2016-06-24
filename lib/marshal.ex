@@ -9,6 +9,9 @@ defmodule Marshal do
   def decode(<<4::size(8), 8::size(8), rest::binary>>) do
     rest |> decode_element({%{}, %{}}) |> elem(0)
   end
+  def decode(<<major::size(8), minor::size(8), _rest::binary>>) do
+    {:error, "Version #{major}.#{minor} is not supported. This module only supports version 4.8"}
+  end
 
   # define TYPE_NIL         '0'
   def decode_element(<<"0", rest::binary>>, cache), do: {nil, rest, cache}

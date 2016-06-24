@@ -2,6 +2,10 @@ defmodule MarshalTest do
   use ExUnit.Case
   doctest Marshal
 
+  test "Error if not version 4.8" do
+    assert Marshal.decode("\x04\a0") == {:error, "Version 4.7 is not supported. This module only supports version 4.8"}
+  end
+
   test "Decode nil" do
     assert Marshal.decode("\x04\b0") == nil
   end
