@@ -6,3 +6,6 @@ notifications:
 otp_release:
   - 19.0
 script: "MIX_ENV=test mix local.hex --force && MIX_ENV=test mix do deps.get, test"
+after_script:
+  - MIX_ENV=docs mix deps.get
+  - MIX_ENV=docs mix inch.report

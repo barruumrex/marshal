@@ -2,6 +2,9 @@
 
 Parser for Ruby Marshal format version 4.8
 
+[![Build Status](https://travis-ci.org/barruumrex/marshal.svg?branch=master)](https://travis-ci.org/barruumrex/marshal)
+[![Inline docs](http://inch-ci.org/github/barruumrex/marshal.svg)](http://inch-ci.org/github/barruumrex/marshal)
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
